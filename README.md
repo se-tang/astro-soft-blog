@@ -1,8 +1,56 @@
-# Astro Soft-Blog · 柔和毛玻璃个人博客（Linux / Docker 版）
+<div align="center">
 
-参考 `vps-craft.com` 柔和渐变背景与毛玻璃卡片风格打造的纯 Markdown 个人博客，基于 **Astro** 构建，专为 **Linux** 服务器一键部署与 **Cloudflare Pages** 免费托管优化。
+# ✨ Astro Soft-Blog
 
-## 1. Docker 一键部署（推荐，无需安装 Node / npm）
+**柔和渐变光斑 · 毛玻璃卡片 · 纯 Markdown 驱动的极简个人博客**
+
+[![Astro](https://img.shields.io/badge/Astro-5.x-BC52EE?style=flat-square&logo=astro&logoColor=white)](https://astro.build)
+[![Docker](https://img.shields.io/badge/Docker-Ready-2496ED?style=flat-square&logo=docker&logoColor=white)](https://www.docker.com/)
+[![Markdown](https://img.shields.io/badge/Content-Markdown-000000?style=flat-square&logo=markdown&logoColor=white)](https://www.markdownguide.org/)
+[![Platform](https://img.shields.io/badge/Platform-Linux-FCC624?style=flat-square&logo=linux&logoColor=black)](https://github.com/se-tang/astro-soft-blog)
+
+*专为 Linux 服务器一键部署与 Cloudflare Pages 免费托管打造，零数据库依赖，专注写作本身。*
+
+</div>
+
+---
+
+## 🌟 特性亮点
+
+| 特性 | 说明 |
+| :--- | :--- |
+| 🎨 **柔和氛围背景** | 底层固定 `40px` 细网格 + 径向渐变光斑（浅色柔白 `#f8fafc` / 深色暗紫 `#0b080f`），护眼且 GPU 零压力 |
+| 🪟 **毛玻璃卡片质感** | 半透明面板配合 `backdrop-filter: blur(15px)`，支持右上角**浅色 / 深色模式**一键切换 |
+| 📝 **纯 Markdown 写作** | 文章全部放在 `src/content/posts/`，自动生成分类筛选、时间归档、代码块高亮与 RSS 订阅 |
+| 🐳 **Docker 一键上线** | 内置多阶段构建 `Dockerfile`，服务器无需安装 Node.js 与 npm，最终运行镜像仅约 **45MB** |
+| ☁️ **免费静态托管** | 支持直接关联 GitHub 部署到 **Cloudflare Pages**，零服务器成本 |
+
+---
+
+## 🚀 快速开始（Linux + Docker 一键部署）
+
+### 第一步：在 Linux 上安装 Docker
+
+如果服务器尚未安装 Docker（已安装可跳过）：
+
+```bash
+# 海外服务器官方一键安装（包含 Docker 与 Docker Compose 插件）
+curl -fsSL https://get.docker.com | sh
+systemctl enable --now docker
+```
+
+> **国内服务器备用安装命令**（如官方脚本下载较慢，可使用阿里云镜像源）：
+> ```bash
+> curl -fsSL https://get.docker.com | bash -s docker --mirror Aliyun
+> systemctl enable --now docker
+> ```
+
+安装完成后验证一下：
+```bash
+docker -v && docker compose version
+```
+
+### 第二步：拉取仓库并一键启动
 
 ```bash
 git clone https://github.com/se-tang/astro-soft-blog.git
@@ -10,33 +58,71 @@ cd astro-soft-blog
 docker compose up -d --build
 ```
 
-启动后访问 `http://你的服务器IP:8080`。
+启动成功后，浏览器访问 **`http://你的服务器IP:8080`** 即可看到博客！  
+*(云服务器请在安全组放行 `8080` 端口；正式上线建议配合 1Panel / 宝塔 / Caddy 反向代理绑定域名与 HTTPS。)*
 
-## 2. 怎么写新文章？
+---
 
-1. 打开 `src/content/posts/` 文件夹，新建一个 `.md` 文件（例如 `hello.md`）：
+## ✍️ 如何撰写与发布新文章？
+
+1. 在 `src/content/posts/` 目录下新建一个 `.md` 文件（例如 `my-note.md`）：
 
 ```markdown
 ---
-title: "我的新文章"
-description: "一句话摘要"
+title: "我的第一篇文章"
+description: "一句话概括文章内容"
 pubDate: 2026-11-17
 category: "随笔"
-tags: ["日常"]
+tags: ["Linux", "Astro"]
 ---
 
-这里是正文……
+这里开始写你的 Markdown 正文……
 ```
 
-2. 保存后重新执行 `docker compose up -d --build` 即可更新上线。
+2. 保存后回到项目根目录，重新执行启动命令即可更新上线：
 
-## 3. Linux 本地开发预览（可选）
+```bash
+docker compose up -d --build
+```
 
-如果本机已安装 Node.js 20+，可直接运行：
+---
+
+## ☁️ 备选：Cloudflare Pages 免费托管（无需服务器）
+
+1. Fork 本仓库到你的 GitHub 账号。
+2. 登录 Cloudflare 控制台 → **Workers 和 Pages** → **创建** → 关联仓库。
+3. 构建配置填写：
+   - **框架预设**：`Astro`
+   - **构建命令**：`npm run build`
+   - **输出目录**：`dist`
+4. 点击部署，几十秒后即可获得免费全球 CDN 加速与 HTTPS 网址。
+
+---
+
+## 🛠️ Linux 本地开发预览（可选）
+
+如果本机已安装 Node.js 20+，可直接本地热更新预览：
 
 ```bash
 chmod +x start-linux.sh
 ./start-linux.sh
 ```
 
-完整小白部署教程见 [TUTORIAL-LINUX.md](./TUTORIAL-LINUX.md)。
+---
+
+## 📁 目录结构
+
+```text
+astro-soft-blog/
+├── src/
+│   ├── content/posts/     # 存放你的所有 Markdown 文章 (.md)
+│   ├── layouts/           # 全局布局（柔和背景、导航栏、页脚）
+│   ├── pages/             # 首页、归档、关于、文章详情、RSS
+│   └── styles/theme.css   # 浅色/深色主题变量与毛玻璃样式
+├── Dockerfile             # 多阶段构建配置（Node 打包 -> Nginx 托管）
+├── docker-compose.yml     # 一键编排启动配置
+├── nginx.conf             # 静态资源缓存与路由配置
+└── TUTORIAL-LINUX.md      # 面向纯小白的完整 Linux 实战教程
+```
+
+📖 **详细图文步骤请阅读**：[Linux 纯小白完整搭建教程](./TUTORIAL-LINUX.md)

@@ -10,7 +10,15 @@ tags: ["Linux", "Docker", "部署"]
 
 ## 方式一：Linux + Docker 一键部署（推荐）
 
-宿主机无需安装 Node.js 或 npm，只要有 Docker：
+宿主机无需安装 Node.js 或 npm。如果服务器还没装 Docker，先执行安装命令：
+
+```bash
+# 安装 Docker 与 Docker Compose（国内服务器可加 --mirror Aliyun）
+curl -fsSL https://get.docker.com | sh
+systemctl enable --now docker
+```
+
+装好后，拉取仓库并一键启动：
 
 ```bash
 git clone https://github.com/se-tang/astro-soft-blog.git

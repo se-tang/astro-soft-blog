@@ -20,8 +20,20 @@
 服务器上只需要装 Docker 这一个软件（不需要装 Node.js / npm / Nginx），以 Ubuntu / Debian 为例：
 
 ```bash
+# 海外服务器官方一键安装（自带 docker compose 插件）
 curl -fsSL https://get.docker.com | sh
 systemctl enable --now docker
+```
+
+> **国内服务器备用命令**（如官方脚本拉取较慢，可指定阿里云镜像）：
+> ```bash
+> curl -fsSL https://get.docker.com | bash -s docker --mirror Aliyun
+> systemctl enable --now docker
+> ```
+
+安装完成后，输入以下命令确认安装成功（能看到版本号即正常）：
+```bash
+docker -v && docker compose version
 ```
 
 ---
