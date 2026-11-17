@@ -215,6 +215,99 @@ body.dark-theme .nav-link.active {
   background: rgba(234, 179, 8, 0.1);
 }
 
+/* 顶部下拉分类菜单 (复刻 vps-craft.com) */
+.nav-dropdown {
+  position: relative;
+  display: inline-flex;
+}
+
+.nav-dropdown-trigger {
+  font-family: inherit;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+}
+
+.nav-caret {
+  opacity: 0.7;
+  margin-left: 2px;
+  font-size: 0.72em;
+  transition: transform 0.15s ease;
+}
+
+.nav-dropdown.open .nav-caret {
+  transform: rotate(180deg);
+}
+
+.nav-dropdown-menu {
+  position: absolute;
+  top: calc(100% + 8px);
+  left: 50%;
+  transform: translateX(-50%) translateY(-6px);
+  min-width: 210px;
+  padding: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  border-radius: 12px;
+  background: var(--header-bg);
+  border: 1px solid var(--border-neon);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  box-shadow: var(--shadow-card-hover);
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+  z-index: 1000;
+  transition: opacity 0.15s ease, transform 0.15s ease, visibility 0.15s ease;
+}
+
+.nav-dropdown.open .nav-dropdown-menu {
+  opacity: 1;
+  visibility: visible;
+  pointer-events: auto;
+  transform: translateX(-50%) translateY(0);
+}
+
+.nav-dropdown-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 8px 12px;
+  border-radius: 8px;
+  color: var(--text-secondary);
+  font-size: 0.82rem;
+  font-weight: 700;
+  text-decoration: none;
+  white-space: nowrap;
+  transition: color 0.15s, background 0.15s;
+}
+
+.nav-dropdown-item:hover,
+.nav-dropdown-item.active {
+  color: var(--neon-cyan);
+  background: rgba(180, 83, 9, 0.08);
+}
+
+body.dark-theme .nav-dropdown-item:hover,
+body.dark-theme .nav-dropdown-item.active {
+  background: rgba(234, 179, 8, 0.12);
+}
+
+.nav-count {
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  color: var(--text-secondary);
+  background: rgba(180, 83, 9, 0.08);
+  padding: 1px 7px;
+  border-radius: 999px;
+}
+
+body.dark-theme .nav-count {
+  background: rgba(234, 179, 8, 0.12);
+}
+
 .theme-toggle-btn {
   display: inline-flex;
   align-items: center;

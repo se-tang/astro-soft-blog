@@ -1,0 +1,74 @@
+---
+import { getCollection } from 'astro:content';
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import { Calendar, FolderOpen, ArrowRight } from 'lucide-astro';
+
+export async function getStaticPaths() {
+  const posts = (await getCollection('posts', ({ data }) => !data.draft)).sort(
+    (a, b) => b.data.pubDate.valueOf() - a.data.pubDate.valueOf()
+  );
+
+  const byCategory = new Map<string, typeof posts>();
+  for (const post of posts) {
+    const cat = post.data.category;
+    if (!byCategory.has(cat)) byCategory.set(cat, []);
+    byCategory.get(cat)!.push(post);
+  }
+
+  return Array.from(byCategory.entries()).map(([category, list]) => ({
+    params: { category },
+    props: { category, posts: list },
+  }));
+}
+
+const { category, posts } = Astro.props;
+
+function formatDate(date: Date) {
+  return date.toISOString().slice(0, 10);
+}
+---
+
+<BaseLayout title={`${category} | 分类 | Soft-Blog`} description={`「${category}」分类下的所有文章`}>
+  <nav class="breadcrumbs" aria-label="面包屑导航">
+    <a href="/" class="bc-link">首页</a>
+    <span class="bc-sep">/</span>
+    <span class="bc-current">分类：{category}</span>
+  </nav>
+
+  <section class="glass-panel guides-header">
+    <h1 class="guides-h1">{category}</h1>
+    <p class="guides-lede">该分类下所有 Markdown 文章按发布时间倒序排列。</p>
+    <p class="guides-count">共 {posts.length} 篇文章</p>
+  </section>
+
+  <ul class="guides-list">
+    {posts.map((post) => (
+      <li class="glass-panel post-card">
+        <a href={`/posts/${post.id}/`} class="post-card-link">
+          <div class="post-card-meta">
+            <span class="post-category-badge">
+              <FolderOpen size={12} style="display:inline;vertical-align:-2px;margin-right:4px;" />
+              {post.data.category}
+            </span>
+            <span>
+              <Calendar size={12} style="display:inline;vertical-align:-2px;margin-right:4px;" />
+              {formatDate(post.data.pubDate)}
+            </span>
+          </div>
+          <h2 class="post-card-title">{post.data.title}</h2>
+          <p class="post-card-desc">{post.data.description}</p>
+          <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;">
+            <div class="post-tags">
+              {post.data.tags.map((tag) => (
+                <span class="post-tag">#{tag}</span>
+              ))}
+            </div>
+            <span style="font-size:0.8rem;font-weight:700;color:var(--neon-cyan);display:inline-flex;align-items:center;gap:4px;">
+              阅读全文 <ArrowRight size={14} />
+            </span>
+          </div>
+        </a>
+      </li>
+    ))}
+  </ul>
+</BaseLayout>

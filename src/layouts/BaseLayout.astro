@@ -2,7 +2,9 @@
 import '@fontsource-variable/outfit';
 import '@fontsource-variable/jetbrains-mono';
 import '../styles/theme.css';
-import { Sparkles, Sun, Moon, Rss } from 'lucide-astro';
+import { getCollection } from 'astro:content';
+import { SITE_CONFIG } from '../config/site';
+import { Sparkles, Sun, Moon, Rss, ChevronDown } from 'lucide-astro';
 
 interface Props {
   title: string;
@@ -11,10 +13,18 @@ interface Props {
 
 const {
   title,
-  description = '一个简洁、柔和、专注于 Markdown 写作的个人博客',
+  description = SITE_CONFIG.description,
 } = Astro.props;
 
 const pathname = Astro.url.pathname;
+
+const allPosts = await getCollection('posts', ({ data }) => !data.draft);
+const categoryCounts = new Map<string, number>();
+for (const post of allPosts) {
+  const cat = post.data.category;
+  categoryCounts.set(cat, (categoryCounts.get(cat) ?? 0) + 1);
+}
+const categories = Array.from(categoryCounts.entries());
 ---
 
 <!doctype html>
@@ -26,7 +36,7 @@ const pathname = Astro.url.pathname;
     <meta name="description" content={description} />
     <meta name="theme-color" content="#f8fafc" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
-    <link rel="alternate" type="application/rss+xml" title="Soft-Blog RSS" href="/rss.xml" />
+    <link rel="alternate" type="application/rss+xml" title={`${SITE_CONFIG.title} RSS`} href="/rss.xml" />
     <script is:inline>
       (function () {
         try {
@@ -58,11 +68,37 @@ const pathname = Astro.url.pathname;
       <div class="header-inner">
         <a href="/" class="logo-section">
           <Sparkles class="logo-icon" />
-          <span class="logo-text">Soft-Blog</span>
+          <span class="logo-text">{SITE_CONFIG.title}</span>
         </a>
 
         <nav class="header-nav" aria-label="主导航">
           <a href="/" class:list={['nav-link', { active: pathname === '/' }]}>首页</a>
+
+          <!-- 自动展开的文章分类下拉菜单 -->
+          <div class:list={['nav-dropdown', { active: pathname.startsWith('/category') }]} id="category-dropdown">
+            <button
+              type="button"
+              class:list={['nav-link nav-dropdown-trigger', { active: pathname.startsWith('/category') }]}
+              aria-expanded="false"
+              aria-haspopup="true"
+            >
+              分类 <ChevronDown size={13} class="nav-caret" />
+            </button>
+            <div class="nav-dropdown-menu" role="menu">
+              {categories.map(([cat, count]) => {
+                const href = `/category/${encodeURIComponent(cat)}/`;
+                const isActive = decodeURIComponent(pathname) === `/category/${cat}/`;
+                return (
+                  <a href={href} class:list={['nav-dropdown-item', { active: isActive }]} role="menuitem">
+                    <span>{cat}</span>
+                    <span class="nav-count">{count}</span>
+                  </a>
+                );
+              })}
+            </div>
+          </div>
+
+          <a href="/tags/" class:list={['nav-link', { active: pathname.startsWith('/tags') }]}>标签</a>
           <a href="/archive/" class:list={['nav-link', { active: pathname.startsWith('/archive') }]}>归档</a>
           <a href="/about/" class:list={['nav-link', { active: pathname.startsWith('/about') }]}>关于</a>
           <a href="/rss.xml" class="nav-link" title="RSS 订阅" aria-label="RSS 订阅">
@@ -103,13 +139,51 @@ const pathname = Astro.url.pathname;
     <script is:inline>
       (function () {
         var btn = document.getElementById('theme-toggle');
-        if (!btn) return;
-        btn.addEventListener('click', function () {
-          var isDark = document.body.classList.toggle('dark-theme');
-          try {
-            localStorage.setItem('soft-blog-theme', isDark ? 'dark' : 'light');
-          } catch (e) {}
-        });
+        if (btn) {
+          btn.addEventListener('click', function () {
+            var isDark = document.body.classList.toggle('dark-theme');
+            try {
+              localStorage.setItem('soft-blog-theme', isDark ? 'dark' : 'light');
+            } catch (e) {}
+          });
+        }
+
+        var dropdown = document.getElementById('category-dropdown');
+        if (dropdown) {
+          var trigger = dropdown.querySelector('.nav-dropdown-trigger');
+          var closeTimer = null;
+
+          function openMenu() {
+            if (closeTimer) { clearTimeout(closeTimer); closeTimer = null; }
+            dropdown.classList.add('open');
+            if (trigger) trigger.setAttribute('aria-expanded', 'true');
+          }
+
+          function closeMenu() {
+            dropdown.classList.remove('open');
+            if (trigger) trigger.setAttribute('aria-expanded', 'false');
+          }
+
+          dropdown.addEventListener('mouseenter', openMenu);
+          dropdown.addEventListener('mouseleave', function () {
+            closeTimer = setTimeout(closeMenu, 140);
+          });
+
+          if (trigger) {
+            trigger.addEventListener('click', function (e) {
+              e.stopPropagation();
+              if (dropdown.classList.contains('open')) {
+                closeMenu();
+              } else {
+                openMenu();
+              }
+            });
+          }
+
+          document.addEventListener('click', function (e) {
+            if (!dropdown.contains(e.target)) closeMenu();
+          });
+        }
       })();
     </script>
   </body>

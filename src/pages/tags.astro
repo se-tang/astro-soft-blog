@@ -1,0 +1,90 @@
+---
+import { getCollection } from 'astro:content';
+import BaseLayout from '../layouts/BaseLayout.astro';
+import { Calendar, FolderOpen, ArrowRight } from 'lucide-astro';
+
+const posts = (await getCollection('posts', ({ data }) => !data.draft)).sort(
+  (a, b) => b.data.pubDate.valueOf() - a.data.pubDate.valueOf()
+);
+
+const tagCounts = new Map<string, number>();
+for (const post of posts) {
+  for (const tag of post.data.tags) {
+    tagCounts.set(tag, (tagCounts.get(tag) ?? 0) + 1);
+  }
+}
+const tags = Array.from(tagCounts.entries()).sort((a, b) => b[1] - a[1]);
+
+function formatDate(date: Date) {
+  return date.toISOString().slice(0, 10);
+}
+---
+
+<BaseLayout title="标签云 | Soft-Blog" description="按标签浏览所有文章">
+  <section class="glass-panel guides-header">
+    <h1 class="guides-h1">文章标签</h1>
+    <p class="guides-lede">点击任意标签，即可筛选出对应的 Markdown 文章。</p>
+    <p class="guides-count">共 {tags.length} 个标签 · {posts.length} 篇文章</p>
+  </section>
+
+  <div class="guides-tabs" role="tablist" aria-label="标签筛选">
+    <button type="button" class="guides-tab active" data-tag="all">
+      全部 <span class="guides-tab-count">{posts.length}</span>
+    </button>
+    {tags.map(([tag, count]) => (
+      <button type="button" class="guides-tab" data-tag={tag}>
+        #{tag} <span class="guides-tab-count">{count}</span>
+      </button>
+    ))}
+  </div>
+
+  <ul class="guides-list" id="tag-post-list">
+    {posts.map((post) => (
+      <li class="glass-panel post-card" data-tags={JSON.stringify(post.data.tags)}>
+        <a href={`/posts/${post.id}/`} class="post-card-link">
+          <div class="post-card-meta">
+            <span class="post-category-badge">
+              <FolderOpen size={12} style="display:inline;vertical-align:-2px;margin-right:4px;" />
+              {post.data.category}
+            </span>
+            <span>
+              <Calendar size={12} style="display:inline;vertical-align:-2px;margin-right:4px;" />
+              {formatDate(post.data.pubDate)}
+            </span>
+          </div>
+          <h2 class="post-card-title">{post.data.title}</h2>
+          <p class="post-card-desc">{post.data.description}</p>
+          <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;">
+            <div class="post-tags">
+              {post.data.tags.map((tag) => (
+                <span class="post-tag">#{tag}</span>
+              ))}
+            </div>
+            <span style="font-size:0.8rem;font-weight:700;color:var(--neon-cyan);display:inline-flex;align-items:center;gap:4px;">
+              阅读全文 <ArrowRight size={14} />
+            </span>
+          </div>
+        </a>
+      </li>
+    ))}
+  </ul>
+
+  <script is:inline>
+    (function () {
+      var tabs = document.querySelectorAll('.guides-tab');
+      var cards = document.querySelectorAll('#tag-post-list .post-card');
+      tabs.forEach(function (tab) {
+        tab.addEventListener('click', function () {
+          var selected = tab.getAttribute('data-tag');
+          tabs.forEach(function (t) { t.classList.remove('active'); });
+          tab.classList.add('active');
+          cards.forEach(function (card) {
+            var tags = [];
+            try { tags = JSON.parse(card.getAttribute('data-tags') || '[]'); } catch (e) {}
+            card.style.display = (selected === 'all' || tags.indexOf(selected) !== -1) ? '' : 'none';
+          });
+        });
+      });
+    })();
+  </script>
+</BaseLayout>
