@@ -2,18 +2,20 @@ import type { APIRoute } from 'astro';
 import { isAuthenticated } from '../../../lib/auth';
 import { deletePost, getAllPosts, savePost } from '../../../lib/posts';
 
-export const GET: APIRoute = async ({ cookies }) => {
-  if (!isAuthenticated(cookies)) {
+export const GET: APIRoute = async ({ cookies, locals }) => {
+  const env = locals.runtime?.env;
+  if (!(await isAuthenticated(cookies, env))) {
     return new Response(JSON.stringify({ error: '未登录' }), { status: 401 });
   }
-  const posts = getAllPosts(true);
+  const posts = await getAllPosts(env, true);
   return new Response(JSON.stringify(posts), {
     headers: { 'content-type': 'application/json' },
   });
 };
 
-export const POST: APIRoute = async ({ request, cookies }) => {
-  if (!isAuthenticated(cookies)) {
+export const POST: APIRoute = async ({ request, cookies, locals }) => {
+  const env = locals.runtime?.env;
+  if (!(await isAuthenticated(cookies, env))) {
     return new Response(JSON.stringify({ error: '未登录' }), { status: 401 });
   }
   try {
@@ -24,7 +26,7 @@ export const POST: APIRoute = async ({ request, cookies }) => {
         ? body.tags.split(/[,，]/).map((t: string) => t.trim()).filter(Boolean)
         : [];
 
-    const saved = savePost({
+    const saved = await savePost(env, {
       slug: String(body.slug || body.title || `post-${Date.now()}`),
       originalSlug: body.originalSlug ? String(body.originalSlug) : undefined,
       title: String(body.title || '未命名文章'),
@@ -40,17 +42,21 @@ export const POST: APIRoute = async ({ request, cookies }) => {
       headers: { 'content-type': 'application/json' },
     });
   } catch (e) {
-    return new Response(JSON.stringify({ error: '保存失败' }), { status: 400 });
+    return new Response(JSON.stringify({ error: e instanceof Error ? e.message : '保存失败' }), {
+      status: 400,
+      headers: { 'content-type': 'application/json' },
+    });
   }
 };
 
-export const DELETE: APIRoute = async ({ request, cookies }) => {
-  if (!isAuthenticated(cookies)) {
+export const DELETE: APIRoute = async ({ request, cookies, locals }) => {
+  const env = locals.runtime?.env;
+  if (!(await isAuthenticated(cookies, env))) {
     return new Response(JSON.stringify({ error: '未登录' }), { status: 401 });
   }
   try {
     const body = await request.json();
-    const ok = deletePost(String(body.slug || ''));
+    const ok = await deletePost(env, String(body.slug || ''));
     return new Response(JSON.stringify({ ok }), {
       status: ok ? 200 : 404,
       headers: { 'content-type': 'application/json' },

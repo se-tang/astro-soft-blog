@@ -1,7 +1,8 @@
 import { getAllPosts } from '../lib/posts';
 
-export async function GET() {
-  const posts = getAllPosts(false);
+export async function GET(context) {
+  const env = context.locals.runtime?.env;
+  const posts = await getAllPosts(env, false);
 
   const index = posts.map((post) => {
     const plainBody = (post.content || '')

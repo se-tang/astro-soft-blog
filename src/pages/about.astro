@@ -1,9 +1,10 @@
 ---
 import BaseLayout from '../layouts/BaseLayout.astro';
 import { getSiteSettings } from '../lib/site';
-import { renderMarkdown } from '../lib/posts';
+import { renderMarkdown } from '../lib/markdown';
 
-const siteSettings = getSiteSettings();
+const env = Astro.locals.runtime?.env;
+const siteSettings = await getSiteSettings(env);
 const { html } = renderMarkdown(siteSettings.aboutContent || '');
 ---
 

@@ -1,45 +1,59 @@
-import fs from 'node:fs';
-import path from 'node:path';
-import crypto from 'node:crypto';
 import type { AstroCookies } from 'astro';
-import { getSiteSettings } from './site';
+import type { RuntimeEnv } from './db';
+import { getSiteSettings, saveSiteSettings } from './site';
 
-const DATA_DIR = path.resolve(process.cwd(), 'data');
-const SECRET_FILE = path.join(DATA_DIR, '.session_secret');
 export const SESSION_COOKIE = 'soft_blog_session';
 
-function getSessionSecret(): string {
-  if (process.env.SESSION_SECRET) return process.env.SESSION_SECRET;
-  if (!fs.existsSync(DATA_DIR)) fs.mkdirSync(DATA_DIR, { recursive: true });
-  if (fs.existsSync(SECRET_FILE)) {
-    return fs.readFileSync(SECRET_FILE, 'utf-8').trim();
+async function getSessionSecret(env?: RuntimeEnv): Promise<string> {
+  if (env?.SESSION_SECRET) return env.SESSION_SECRET;
+  const settings = await getSiteSettings(env);
+  if (settings.sessionSecret) return settings.sessionSecret;
+
+  const bytes = new Uint8Array(32);
+  crypto.getRandomValues(bytes);
+  const generated = Array.from(bytes, (b) => b.toString(16).padStart(2, '0')).join('');
+  if (env?.DB) {
+    try {
+      await saveSiteSettings(env, { sessionSecret: generated });
+    } catch {}
   }
-  const secret = crypto.randomBytes(32).toString('hex');
-  fs.writeFileSync(SECRET_FILE, secret, 'utf-8');
-  return secret;
+  return generated;
 }
 
-export function getAdminPassword(): string {
-  const settings = getSiteSettings();
+async function hmacHex(secret: string, data: string): Promise<string> {
+  const enc = new TextEncoder();
+  const key = await crypto.subtle.importKey(
+    'raw',
+    enc.encode(secret),
+    { name: 'HMAC', hash: 'SHA-256' },
+    false,
+    ['sign']
+  );
+  const sig = await crypto.subtle.sign('HMAC', key, enc.encode(data));
+  return Array.from(new Uint8Array(sig), (b) => b.toString(16).padStart(2, '0')).join('');
+}
+
+export async function getAdminPassword(env?: RuntimeEnv): Promise<string> {
+  const settings = await getSiteSettings(env);
   if (settings.adminPassword && settings.adminPassword.trim()) {
     return settings.adminPassword.trim();
   }
-  return process.env.ADMIN_PASSWORD || 'admin123';
+  return env?.ADMIN_PASSWORD || 'admin123';
 }
 
-export function isUsingDefaultPassword(): boolean {
-  return getAdminPassword() === 'admin123';
+export async function isUsingDefaultPassword(env?: RuntimeEnv): Promise<boolean> {
+  return (await getAdminPassword(env)) === 'admin123';
 }
 
-export function createSessionToken(): string {
-  const secret = getSessionSecret();
+export async function createSessionToken(env?: RuntimeEnv): Promise<string> {
+  const secret = await getSessionSecret(env);
   const exp = Date.now() + 7 * 24 * 60 * 60 * 1000;
   const payload = `admin.${exp}`;
-  const sig = crypto.createHmac('sha256', secret).update(payload).digest('hex');
+  const sig = await hmacHex(secret, payload);
   return `${payload}.${sig}`;
 }
 
-export function verifySessionToken(token: string | undefined): boolean {
+export async function verifySessionToken(env: RuntimeEnv | undefined, token: string | undefined): Promise<boolean> {
   if (!token) return false;
   const parts = token.split('.');
   if (parts.length !== 3) return false;
@@ -48,16 +62,17 @@ export function verifySessionToken(token: string | undefined): boolean {
   const exp = Number(expStr);
   if (!Number.isFinite(exp) || Date.now() > exp) return false;
 
-  const secret = getSessionSecret();
-  const expected = crypto.createHmac('sha256', secret).update(`${role}.${expStr}`).digest('hex');
-  try {
-    return crypto.timingSafeEqual(Buffer.from(sig), Buffer.from(expected));
-  } catch {
-    return false;
+  const secret = await getSessionSecret(env);
+  const expected = await hmacHex(secret, `${role}.${expStr}`);
+  if (sig.length !== expected.length) return false;
+  let diff = 0;
+  for (let i = 0; i < sig.length; i++) {
+    diff |= sig.charCodeAt(i) ^ expected.charCodeAt(i);
   }
+  return diff === 0;
 }
 
-export function isAuthenticated(cookies: AstroCookies): boolean {
+export async function isAuthenticated(cookies: AstroCookies, env?: RuntimeEnv): Promise<boolean> {
   const token = cookies.get(SESSION_COOKIE)?.value;
-  return verifySessionToken(token);
+  return verifySessionToken(env, token);
 }

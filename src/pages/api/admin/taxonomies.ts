@@ -2,8 +2,9 @@ import type { APIRoute } from 'astro';
 import { isAuthenticated } from '../../../lib/auth';
 import { renameCategory, renameTag } from '../../../lib/posts';
 
-export const POST: APIRoute = async ({ request, cookies }) => {
-  if (!isAuthenticated(cookies)) {
+export const POST: APIRoute = async ({ request, cookies, locals }) => {
+  const env = locals.runtime?.env;
+  if (!(await isAuthenticated(cookies, env))) {
     return new Response(JSON.stringify({ error: '未登录' }), { status: 401 });
   }
   try {
@@ -16,9 +17,9 @@ export const POST: APIRoute = async ({ request, cookies }) => {
     }
     const updated =
       type === 'category'
-        ? renameCategory(oldName, newName)
+        ? await renameCategory(env, oldName, newName)
         : type === 'tag'
-          ? renameTag(oldName, newName)
+          ? await renameTag(env, oldName, newName)
           : 0;
 
     return new Response(JSON.stringify({ ok: true, updated }), {

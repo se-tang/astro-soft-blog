@@ -1,5 +1,4 @@
-import fs from 'node:fs';
-import path from 'node:path';
+import { ensureDbReady, type RuntimeEnv } from './db';
 
 export interface SiteSettings {
   title: string;
@@ -8,10 +7,8 @@ export interface SiteSettings {
   footerText: string;
   aboutContent: string;
   adminPassword?: string;
+  sessionSecret?: string;
 }
-
-const DATA_DIR = path.resolve(process.cwd(), 'data');
-const SITE_FILE = path.join(DATA_DIR, 'site.json');
 
 const DEFAULT_ABOUT = `## 设计理念
 
@@ -19,8 +16,8 @@ const DEFAULT_ABOUT = `## 设计理念
 
 ## 写作与管理
 
-- 所有文章均以纯 \`Markdown\` 格式存储，可在后台直接可视化编写、分类与管理。
-- 支持浅色 / 深色模式一键切换，适配桌面与移动端阅读。`;
+- 基于 **Astro + Cloudflare Pages + D1** 构建，所有文章与设置均保存在云端 D1 数据库。
+- 访问 \`/admin/\` 即可在线编写 Markdown、管理分类标签与站点信息。`;
 
 export const DEFAULT_SITE_SETTINGS: SiteSettings = {
   title: 'Soft-Blog',
@@ -30,34 +27,44 @@ export const DEFAULT_SITE_SETTINGS: SiteSettings = {
   aboutContent: DEFAULT_ABOUT,
 };
 
-function ensureDataDir() {
-  if (!fs.existsSync(DATA_DIR)) {
-    fs.mkdirSync(DATA_DIR, { recursive: true });
-  }
-}
+export async function getSiteSettings(env?: RuntimeEnv): Promise<SiteSettings> {
+  const db = env?.DB;
+  if (!db) return { ...DEFAULT_SITE_SETTINGS };
 
-export function getSiteSettings(): SiteSettings {
-  ensureDataDir();
-  if (!fs.existsSync(SITE_FILE)) {
-    fs.writeFileSync(SITE_FILE, JSON.stringify(DEFAULT_SITE_SETTINGS, null, 2), 'utf-8');
-    return { ...DEFAULT_SITE_SETTINGS };
-  }
   try {
-    const raw = fs.readFileSync(SITE_FILE, 'utf-8');
-    const parsed = JSON.parse(raw);
-    return { ...DEFAULT_SITE_SETTINGS, ...parsed };
+    await ensureDbReady(db);
+    const { results } = await db.prepare('SELECT key, value FROM site_settings').all<{ key: string; value: string }>();
+    const map: Record<string, string> = {};
+    for (const row of results || []) {
+      map[row.key] = row.value;
+    }
+    return {
+      title: map.title || DEFAULT_SITE_SETTINGS.title,
+      subtitle: map.subtitle || DEFAULT_SITE_SETTINGS.subtitle,
+      description: map.description || DEFAULT_SITE_SETTINGS.description,
+      footerText: map.footerText || DEFAULT_SITE_SETTINGS.footerText,
+      aboutContent: map.aboutContent || DEFAULT_SITE_SETTINGS.aboutContent,
+      adminPassword: map.adminPassword,
+      sessionSecret: map.sessionSecret,
+    };
   } catch {
     return { ...DEFAULT_SITE_SETTINGS };
   }
 }
 
-export function saveSiteSettings(partial: Partial<SiteSettings>): SiteSettings {
-  ensureDataDir();
-  const current = getSiteSettings();
-  const next: SiteSettings = {
-    ...current,
-    ...partial,
-  };
-  fs.writeFileSync(SITE_FILE, JSON.stringify(next, null, 2), 'utf-8');
-  return next;
+export async function saveSiteSettings(env: RuntimeEnv, partial: Partial<SiteSettings>): Promise<SiteSettings> {
+  const db = env?.DB;
+  if (!db) {
+    throw new Error('未检测到 Cloudflare D1 数据库绑定 (DB)，请先在 Pages 设置中绑定 D1 数据库。');
+  }
+  await ensureDbReady(db);
+
+  const entries = Object.entries(partial).filter(([, v]) => typeof v === 'string');
+  if (entries.length > 0) {
+    const stmts = entries.map(([k, v]) =>
+      db.prepare('INSERT OR REPLACE INTO site_settings (key, value) VALUES (?, ?)').bind(k, v as string)
+    );
+    await db.batch(stmts);
+  }
+  return getSiteSettings(env);
 }

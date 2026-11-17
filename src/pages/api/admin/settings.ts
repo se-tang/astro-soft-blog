@@ -2,8 +2,9 @@ import type { APIRoute } from 'astro';
 import { isAuthenticated } from '../../../lib/auth';
 import { saveSiteSettings } from '../../../lib/site';
 
-export const POST: APIRoute = async ({ request, cookies }) => {
-  if (!isAuthenticated(cookies)) {
+export const POST: APIRoute = async ({ request, cookies, locals }) => {
+  const env = locals.runtime?.env;
+  if (!(await isAuthenticated(cookies, env))) {
     return new Response(JSON.stringify({ error: '未登录' }), { status: 401 });
   }
   try {
@@ -18,11 +19,14 @@ export const POST: APIRoute = async ({ request, cookies }) => {
       patch.adminPassword = body.newPassword.trim();
     }
 
-    const saved = saveSiteSettings(patch);
+    const saved = await saveSiteSettings(env, patch);
     return new Response(JSON.stringify({ ok: true, settings: saved }), {
       headers: { 'content-type': 'application/json' },
     });
-  } catch {
-    return new Response(JSON.stringify({ error: '保存设置失败' }), { status: 400 });
+  } catch (e) {
+    return new Response(JSON.stringify({ error: e instanceof Error ? e.message : '保存设置失败' }), {
+      status: 400,
+      headers: { 'content-type': 'application/json' },
+    });
   }
 };

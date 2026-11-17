@@ -3,11 +3,12 @@ import AdminLayout from '../../layouts/AdminLayout.astro';
 import { isAuthenticated } from '../../lib/auth';
 import { getAllPosts } from '../../lib/posts';
 
-if (!isAuthenticated(Astro.cookies)) {
+const env = Astro.locals.runtime?.env;
+if (!(await isAuthenticated(Astro.cookies, env))) {
   return Astro.redirect('/admin/login/');
 }
 
-const posts = getAllPosts(true);
+const posts = await getAllPosts(env, true);
 const categoryMap = new Map<string, number>();
 const tagMap = new Map<string, number>();
 

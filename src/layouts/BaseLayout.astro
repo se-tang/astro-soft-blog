@@ -12,7 +12,8 @@ interface Props {
   wide?: boolean;
 }
 
-const siteSettings = getSiteSettings();
+const env = Astro.locals.runtime?.env;
+const siteSettings = await getSiteSettings(env);
 const {
   title,
   description = siteSettings.description,
@@ -21,7 +22,7 @@ const {
 
 const pathname = Astro.url.pathname;
 
-const allPosts = getAllPosts(false);
+const allPosts = await getAllPosts(env, false);
 const categoryCounts = new Map<string, number>();
 for (const post of allPosts) {
   const cat = post.category;

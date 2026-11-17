@@ -4,11 +4,12 @@ import { isAuthenticated } from '../../lib/auth';
 import { getAllPosts } from '../../lib/posts';
 import { PenSquare, Edit, Trash2, ExternalLink } from 'lucide-astro';
 
-if (!isAuthenticated(Astro.cookies)) {
+const env = Astro.locals.runtime?.env;
+if (!(await isAuthenticated(Astro.cookies, env))) {
   return Astro.redirect('/admin/login/');
 }
 
-const posts = getAllPosts(true);
+const posts = await getAllPosts(env, true);
 const publishedCount = posts.filter((p) => !p.draft).length;
 const draftCount = posts.filter((p) => p.draft).length;
 const categoriesCount = new Set(posts.map((p) => p.category)).size;

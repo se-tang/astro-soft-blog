@@ -3,8 +3,9 @@ import BaseLayout from '../layouts/BaseLayout.astro';
 import { getAllPosts } from '../lib/posts';
 import { getSiteSettings } from '../lib/site';
 
-const siteSettings = getSiteSettings();
-const posts = getAllPosts(false);
+const env = Astro.locals.runtime?.env;
+const siteSettings = await getSiteSettings(env);
+const posts = await getAllPosts(env, false);
 
 const byYear = new Map<number, typeof posts>();
 for (const post of posts) {

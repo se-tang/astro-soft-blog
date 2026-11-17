@@ -4,11 +4,12 @@ import { isAuthenticated } from '../../lib/auth';
 import { getSiteSettings } from '../../lib/site';
 import { Save } from 'lucide-astro';
 
-if (!isAuthenticated(Astro.cookies)) {
+const env = Astro.locals.runtime?.env;
+if (!(await isAuthenticated(Astro.cookies, env))) {
   return Astro.redirect('/admin/login/');
 }
 
-const settings = getSiteSettings();
+const settings = await getSiteSettings(env);
 ---
 
 <AdminLayout title="站点设置" activeNav="settings">

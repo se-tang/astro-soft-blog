@@ -4,15 +4,16 @@ import { getAllPosts, getPostBySlug } from '../../lib/posts';
 import { getSiteSettings } from '../../lib/site';
 import { Calendar, FolderOpen, ArrowLeft, BookOpen, List, ArrowUp } from 'lucide-astro';
 
+const env = Astro.locals.runtime?.env;
 const rawSlug = (Astro.params.slug || '').replace(/\/+$/, '');
-const post = getPostBySlug(rawSlug, false);
+const post = await getPostBySlug(env, rawSlug, false);
 
 if (!post) {
   return Astro.redirect('/');
 }
 
-const siteSettings = getSiteSettings();
-const allPosts = getAllPosts(false);
+const siteSettings = await getSiteSettings(env);
+const allPosts = await getAllPosts(env, false);
 const tocHeadings = post.headings.filter((h) => h.depth >= 2 && h.depth <= 4);
 ---
 

@@ -4,13 +4,14 @@ import { isAuthenticated } from '../../lib/auth';
 import { getAllPosts, getPostBySlug } from '../../lib/posts';
 import { Save, Send, ArrowLeft } from 'lucide-astro';
 
-if (!isAuthenticated(Astro.cookies)) {
+const env = Astro.locals.runtime?.env;
+if (!(await isAuthenticated(Astro.cookies, env))) {
   return Astro.redirect('/admin/login/');
 }
 
 const slugParam = Astro.url.searchParams.get('slug') || '';
-const editingPost = slugParam ? getPostBySlug(slugParam, true) : null;
-const allCategories = Array.from(new Set(getAllPosts(true).map((p) => p.category)));
+const editingPost = slugParam ? await getPostBySlug(env, slugParam, true) : null;
+const allCategories = Array.from(new Set((await getAllPosts(env, true)).map((p) => p.category)));
 const today = new Date().toISOString().slice(0, 10);
 ---
 

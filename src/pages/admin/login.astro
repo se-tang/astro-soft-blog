@@ -7,11 +7,12 @@ import { isAuthenticated } from '../../lib/auth';
 import { getSiteSettings } from '../../lib/site';
 import { Sparkles, Lock } from 'lucide-astro';
 
-if (isAuthenticated(Astro.cookies)) {
+const env = Astro.locals.runtime?.env;
+if (await isAuthenticated(Astro.cookies, env)) {
   return Astro.redirect('/admin/');
 }
 
-const siteSettings = getSiteSettings();
+const siteSettings = await getSiteSettings(env);
 ---
 
 <!doctype html>

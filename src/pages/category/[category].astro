@@ -4,9 +4,10 @@ import { getAllPosts } from '../../lib/posts';
 import { getSiteSettings } from '../../lib/site';
 import { Calendar, FolderOpen, ArrowRight } from 'lucide-astro';
 
+const env = Astro.locals.runtime?.env;
 const category = decodeURIComponent((Astro.params.category || '').replace(/\/+$/, ''));
-const siteSettings = getSiteSettings();
-const posts = getAllPosts(false).filter((p) => p.category === category);
+const siteSettings = await getSiteSettings(env);
+const posts = (await getAllPosts(env, false)).filter((p) => p.category === category);
 ---
 
 <BaseLayout title={`${category} | 分类 | ${siteSettings.title}`} description={`「${category}」分类下的所有文章`}>

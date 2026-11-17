@@ -4,8 +4,9 @@ import { getAllPosts } from '../lib/posts';
 import { getSiteSettings } from '../lib/site';
 import { Calendar, FolderOpen, ArrowRight } from 'lucide-astro';
 
-const siteSettings = getSiteSettings();
-const allPosts = getAllPosts(false);
+const env = Astro.locals.runtime?.env;
+const siteSettings = await getSiteSettings(env);
+const allPosts = await getAllPosts(env, false);
 
 const categoryCounts = new Map<string, number>();
 for (const post of allPosts) {

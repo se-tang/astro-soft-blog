@@ -1,14 +1,12 @@
 import { defineConfig } from 'astro/config';
-import node from '@astrojs/node';
+import cloudflare from '@astrojs/cloudflare';
 
 export default defineConfig({
   site: 'https://__site_origin__',
   output: 'server',
-  adapter: node({
-    mode: 'standalone',
+  adapter: cloudflare({
+    platformProxy: {
+      enabled: true,
+    },
   }),
-  server: {
-    host: true,
-    port: 4321,
-  },
 });
