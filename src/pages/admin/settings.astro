@@ -45,6 +45,16 @@ const settings = await getSiteSettings(env);
     </div>
 
     <div class="form-field">
+      <label for="site-banner">顶部公告横幅文案（留空则隐藏横幅）</label>
+      <input type="text" id="site-banner" class="admin-input" value={settings.bannerText || ''} />
+    </div>
+
+    <div class="form-field">
+      <label for="site-banner-url">顶部公告跳转链接（可选）</label>
+      <input type="text" id="site-banner-url" class="admin-input" value={settings.bannerUrl || ''} placeholder="/archive/" />
+    </div>
+
+    <div class="form-field">
       <label for="site-about">「关于」页面内容（Markdown 格式）</label>
       <textarea
         id="site-about"
@@ -73,6 +83,8 @@ const settings = await getSiteSettings(env);
           subtitle: document.getElementById('site-subtitle').value,
           description: document.getElementById('site-desc').value,
           footerText: document.getElementById('site-footer').value,
+          bannerText: document.getElementById('site-banner').value,
+          bannerUrl: document.getElementById('site-banner-url').value,
           aboutContent: document.getElementById('site-about').value,
           newPassword: document.getElementById('new-password').value,
         };

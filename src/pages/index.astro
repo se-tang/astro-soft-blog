@@ -2,15 +2,17 @@
 import BaseLayout from '../layouts/BaseLayout.astro';
 import { getAllPosts } from '../lib/posts';
 import { getSiteSettings } from '../lib/site';
-import { Calendar, FolderOpen, ArrowRight } from 'lucide-astro';
+import { Calendar, FolderOpen, ArrowRight, Sparkles, Search } from 'lucide-astro';
 
 const env = Astro.locals.runtime?.env;
 const siteSettings = await getSiteSettings(env);
 const allPosts = await getAllPosts(env, false);
 
 const categoryCounts = new Map<string, number>();
+const tagSet = new Set<string>();
 for (const post of allPosts) {
   categoryCounts.set(post.category, (categoryCounts.get(post.category) ?? 0) + 1);
+  for (const tag of post.tags) tagSet.add(tag);
 }
 const categories = Array.from(categoryCounts.entries());
 ---
@@ -20,27 +22,52 @@ const categories = Array.from(categoryCounts.entries());
   description={siteSettings.description}
 >
   <section class="glass-panel guides-header">
-    <h1 class="guides-h1">{siteSettings.title} · {siteSettings.subtitle}</h1>
+    <div class="hero-top-badge">
+      <Sparkles size={13} />
+      <span>{siteSettings.subtitle}</span>
+    </div>
+    <h1 class="guides-h1">{siteSettings.title}</h1>
     <p class="guides-lede">{siteSettings.description}</p>
-    <p class="guides-count">共收录 {allPosts.length} 篇文章 · {categories.length} 个分类</p>
+    <div class="docs-hero-metrics">
+      <span class="metric-pill">文章总数 <strong>{allPosts.length}</strong></span>
+      <span class="metric-pill">专栏分类 <strong>{categories.length}</strong></span>
+      <span class="metric-pill">话题标签 <strong>{tagSet.size}</strong></span>
+    </div>
   </section>
 
-  <div class="guides-tabs" role="tablist" aria-label="文章分类筛选">
-    <button type="button" class="guides-tab active" data-category="all">
-      全部 <span class="guides-tab-count">{allPosts.length}</span>
-    </button>
-    {categories.map(([cat, count]) => (
-      <button type="button" class="guides-tab" data-category={cat}>
-        {cat} <span class="guides-tab-count">{count}</span>
+  <section class="glass-panel docs-controls">
+    <div class="guides-tabs" role="tablist" aria-label="文章分类筛选">
+      <button type="button" class="guides-tab active" data-category="all">
+        全部 <span class="guides-tab-count">{allPosts.length}</span>
       </button>
-    ))}
-  </div>
+      {categories.map(([cat, count]) => (
+        <button type="button" class="guides-tab" data-category={cat}>
+          {cat} <span class="guides-tab-count">{count}</span>
+        </button>
+      ))}
+    </div>
 
-  <ul class="guides-list" id="post-list">
+    <div class="home-filter-box">
+      <Search size={14} class="home-filter-icon" />
+      <input
+        type="text"
+        id="home-quick-filter"
+        class="home-filter-input"
+        placeholder="筛选当前文章..."
+        autocomplete="off"
+      />
+    </div>
+  </section>
+
+  <ul class="cards-grid" id="post-list">
     {allPosts.map((post) => (
-      <li class="glass-panel post-card" data-category={post.category}>
-        <a href={`/posts/${post.slug}/`} class="post-card-link">
-          <div class="post-card-meta">
+      <li
+        class="glass-panel craft-card"
+        data-category={post.category}
+        data-text={`${post.title} ${post.description} ${post.category} ${post.tags.join(' ')}`.toLowerCase()}
+      >
+        <a href={`/posts/${post.slug}/`} class="craft-card-link">
+          <div class="craft-card-head">
             <span class="post-category-badge">
               <FolderOpen size={12} style="display:inline;vertical-align:-2px;margin-right:4px;" />
               {post.category}
@@ -51,14 +78,14 @@ const categories = Array.from(categoryCounts.entries());
             </span>
           </div>
           <h2 class="post-card-title">{post.title}</h2>
-          <p class="post-card-desc">{post.description}</p>
-          <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;">
+          <p class="craft-card-desc">{post.description}</p>
+          <div class="craft-card-foot">
             <div class="post-tags">
-              {post.tags.map((tag) => (
+              {post.tags.slice(0, 3).map((tag) => (
                 <span class="post-tag">#{tag}</span>
               ))}
             </div>
-            <span style="font-size:0.8rem;font-weight:700;color:var(--neon-cyan);display:inline-flex;align-items:center;gap:4px;">
+            <span style="font-size:0.8rem;font-weight:700;color:var(--neon-cyan);display:inline-flex;align-items:center;gap:4px;white-space:nowrap;">
               阅读全文 <ArrowRight size={14} />
             </span>
           </div>
@@ -70,18 +97,33 @@ const categories = Array.from(categoryCounts.entries());
   <script is:inline>
     (function () {
       var tabs = document.querySelectorAll('.guides-tab');
-      var cards = document.querySelectorAll('#post-list .post-card');
+      var cards = document.querySelectorAll('#post-list .craft-card');
+      var filterInput = document.getElementById('home-quick-filter');
+      var selectedCat = 'all';
+
+      function applyFilters() {
+        var q = (filterInput ? filterInput.value : '').trim().toLowerCase();
+        cards.forEach(function (card) {
+          var cat = card.getAttribute('data-category');
+          var text = card.getAttribute('data-text') || '';
+          var okCat = selectedCat === 'all' || cat === selectedCat;
+          var okQ = !q || text.indexOf(q) !== -1;
+          card.style.display = okCat && okQ ? '' : 'none';
+        });
+      }
+
       tabs.forEach(function (tab) {
         tab.addEventListener('click', function () {
-          var selected = tab.getAttribute('data-category');
+          selectedCat = tab.getAttribute('data-category') || 'all';
           tabs.forEach(function (t) { t.classList.remove('active'); });
           tab.classList.add('active');
-          cards.forEach(function (card) {
-            var cat = card.getAttribute('data-category');
-            card.style.display = (selected === 'all' || cat === selected) ? '' : 'none';
-          });
+          applyFilters();
         });
       });
+
+      if (filterInput) {
+        filterInput.addEventListener('input', applyFilters);
+      }
     })();
   </script>
 </BaseLayout>

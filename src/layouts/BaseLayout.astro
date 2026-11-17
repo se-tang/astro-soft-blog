@@ -4,7 +4,7 @@ import '@fontsource-variable/jetbrains-mono';
 import '../styles/theme.css';
 import { getAllPosts } from '../lib/posts';
 import { getSiteSettings } from '../lib/site';
-import { Sparkles, Sun, Moon, Rss, ChevronDown, Search, Settings } from 'lucide-astro';
+import { Sparkles, Sun, Moon, Rss, ChevronDown, Search, Settings, X, ArrowRight } from 'lucide-astro';
 
 interface Props {
   title: string;
@@ -66,6 +66,26 @@ const categories = Array.from(categoryCounts.entries());
       <div class="blob blob-cyan"></div>
       <div class="blob blob-purple"></div>
     </div>
+
+    {siteSettings.bannerText && (
+      <aside class="campaign-top-banner" id="top-announcement-banner" role="banner">
+        <div class="banner-hairline" aria-hidden="true"></div>
+        <div class="banner-container">
+          <a href={siteSettings.bannerUrl || '/'} class="banner-content">
+            <span class="banner-badge">✨ 公告</span>
+            <p class="banner-text">{siteSettings.bannerText}</p>
+            {siteSettings.bannerUrl && (
+              <span class="banner-cta">
+                查看 <ArrowRight size={13} />
+              </span>
+            )}
+          </a>
+          <button type="button" id="banner-close-btn" class="banner-close" title="关闭横幅" aria-label="关闭横幅">
+            <X size={14} />
+          </button>
+        </div>
+      </aside>
+    )}
 
     <!-- 顶部毛玻璃导航栏 -->
     <header class="app-header">
@@ -417,6 +437,40 @@ const categories = Array.from(categoryCounts.entries());
           container.querySelectorAll('.md-tab-panel').forEach(function (p) {
             p.classList.toggle('active', p.getAttribute('data-tab-idx') === idx);
           });
+        });
+
+        // 顶部公告横幅关闭
+        var topBanner = document.getElementById('top-announcement-banner');
+        var bannerCloseBtn = document.getElementById('banner-close-btn');
+        if (topBanner) {
+          try {
+            if (sessionStorage.getItem('soft_blog_banner_closed') === '1') {
+              topBanner.style.display = 'none';
+            }
+          } catch (e) {}
+          if (bannerCloseBtn) {
+            bannerCloseBtn.addEventListener('click', function () {
+              topBanner.style.display = 'none';
+              try { sessionStorage.setItem('soft_blog_banner_closed', '1'); } catch (e) {}
+            });
+          }
+        }
+
+        // 代码块一键复制按钮
+        document.querySelectorAll('.prose pre').forEach(function (pre) {
+          var code = pre.querySelector('code');
+          if (!code) return;
+          var copyBtn = document.createElement('button');
+          copyBtn.type = 'button';
+          copyBtn.className = 'copy-code-btn';
+          copyBtn.textContent = '复制';
+          copyBtn.addEventListener('click', function () {
+            navigator.clipboard.writeText(code.innerText || code.textContent || '').then(function () {
+              copyBtn.textContent = '已复制';
+              setTimeout(function () { copyBtn.textContent = '复制'; }, 1500);
+            });
+          });
+          pre.appendChild(copyBtn);
         });
       })();
     </script>
