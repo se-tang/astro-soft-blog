@@ -15,64 +15,40 @@
 
 ---
 
-## 二、 第一步：在空白 Linux 上安装 Docker
+## 二、 一条命令全自动部署（最推荐）
 
-服务器上只需要装 Docker 这一个软件（不需要装 Node.js / npm / Nginx），以 Ubuntu / Debian 为例：
+在一台全新的空白 Linux 服务器上，你**不需要手动装 Docker、不需要装 Node.js / npm**，直接复制运行这一条命令：
 
 ```bash
-# 海外服务器官方一键安装（自带 docker compose 插件）
-curl -fsSL https://get.docker.com | sh
-systemctl enable --now docker
+curl -fsSL https://raw.githubusercontent.com/se-tang/astro-soft-blog/main/install.sh | bash
 ```
 
-> **国内服务器备用命令**（如官方脚本拉取较慢，可指定阿里云镜像）：
-> ```bash
-> curl -fsSL https://get.docker.com | bash -s docker --mirror Aliyun
-> systemctl enable --now docker
-> ```
+脚本会自动完成：`检查安装 git/Docker` → `拉取仓库` → `容器内构建并启动`，全程日志精简不刷屏。完成后会直接打印出你的访问地址（`http://你的服务器IP:8080`）。
 
-安装完成后，输入以下命令确认安装成功（能看到版本号即正常）：
-```bash
-docker -v && docker compose version
-```
+> 如果是云服务器，记得在控制台安全组放行 `8080` 端口；正式上线建议配合 1Panel / 宝塔 / Caddy 反向代理绑定域名并开启 HTTPS。
 
 ---
 
-## 三、 第二步：获取博客模板文件
+<details>
+<summary>如果想手动分步操作（或使用国内服务器镜像），点此展开</summary>
 
-因为你的电脑/服务器上目前什么文件都没有，直接拉取已经配置好柔和毛玻璃皮肤与 Docker 文件的整套模板即可（将下面的 `你的用户名` 替换为实际的 GitHub 用户名，或使用作者提供的压缩包）：
+### 1. 安装 Docker
+```bash
+# 海外服务器官方脚本
+curl -fsSL https://get.docker.com | sh && systemctl enable --now docker
 
-### 方式 A：通过 Git 拉取（推荐）
+# 国内服务器备用（阿里云镜像）
+# curl -fsSL https://get.docker.com | bash -s docker --mirror Aliyun && systemctl enable --now docker
+```
+
+### 2. 拉取代码并启动
 ```bash
 git clone https://github.com/se-tang/astro-soft-blog.git
 cd astro-soft-blog
-```
-
-### 方式 B：通过压缩包上传（适合不会用 Git 的新手）
-1. 在仓库页面点击 **Code → Download ZIP** 下载 `astro-soft-blog-main.zip`，上传到服务器（例如 `/root/` 目录）。
-2. 解压并进入目录：
-   ```bash
-   unzip astro-soft-blog-main.zip
-   cd astro-soft-blog-main
-   ```
-
-> **提示**：进入目录后，里面已经为你准备好了网页源码（`src/`）、字体、以及 Docker 部署所需的 `Dockerfile`、`docker-compose.yml` 和 `nginx.conf`。
-
----
-
-## 四、 第三步：一键构建并启动博客
-
-在 `astro-soft-blog` 目录下，只需执行这一条命令：
-
-```bash
 docker compose up -d --build
 ```
 
-**这条命令在背后自动做了什么？**
-- 它会根据根目录的 `Dockerfile`，自动从 **Docker Hub 官方仓库** 拉取 `node:22-alpine` 镜像在容器内打包网页，然后再拉取 `nginx:alpine` 镜像（仅约 45MB）对外提供网页服务；
-- 整个过程全自动完成，不会污染你服务器本身的系统环境。
-
-启动完成后，在浏览器输入 **`http://你的服务器IP:8080`**，就能看到博客首页了！（如果是云服务器，记得在安全组/防火墙放行 `8080` 端口；正式上线建议用 1Panel / 宝塔 / Caddy 反向代理绑定域名并开启 HTTPS。）
+</details>
 
 ---
 

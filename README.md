@@ -27,39 +27,33 @@
 
 ---
 
-## 🚀 快速开始（Linux + Docker 一键部署）
+## 🚀 极简一键部署（Linux 只需这一条命令）
 
-### 第一步：在 Linux 上安装 Docker
-
-如果服务器尚未安装 Docker（已安装可跳过）：
+在一台全新的 Linux 服务器上，**不需要手动装 Docker、不需要装 Node.js**，直接执行这一条命令即可全自动完成安装、拉取代码并启动（全程静默精简输出）：
 
 ```bash
-# 海外服务器官方一键安装（包含 Docker 与 Docker Compose 插件）
-curl -fsSL https://get.docker.com | sh
-systemctl enable --now docker
+curl -fsSL https://raw.githubusercontent.com/se-tang/astro-soft-blog/main/install.sh | bash
 ```
 
-> **国内服务器备用安装命令**（如官方脚本下载较慢，可使用阿里云镜像源）：
-> ```bash
-> curl -fsSL https://get.docker.com | bash -s docker --mirror Aliyun
-> systemctl enable --now docker
-> ```
+启动成功后，浏览器访问 **`http://你的服务器IP:8080`** 即可看到博客！  
+*(云服务器请在安全组放行 `8080` 端口；正式上线建议配合 1Panel / 宝塔 / Caddy 反向代理绑定域名与 HTTPS。)*
 
-安装完成后验证一下：
-```bash
-docker -v && docker compose version
-```
-
-### 第二步：拉取仓库并一键启动
+<details>
+<summary>展开查看：手动分步命令（含国内服务器 Docker 镜像源）</summary>
 
 ```bash
+# 海外服务器安装 Docker
+curl -fsSL https://get.docker.com | sh && systemctl enable --now docker
+
+# 国内服务器备用（阿里云镜像）
+# curl -fsSL https://get.docker.com | bash -s docker --mirror Aliyun && systemctl enable --now docker
+
 git clone https://github.com/se-tang/astro-soft-blog.git
 cd astro-soft-blog
 docker compose up -d --build
 ```
 
-启动成功后，浏览器访问 **`http://你的服务器IP:8080`** 即可看到博客！  
-*(云服务器请在安全组放行 `8080` 端口；正式上线建议配合 1Panel / 宝塔 / Caddy 反向代理绑定域名与 HTTPS。)*
+</details>
 
 ---
 
