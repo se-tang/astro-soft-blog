@@ -2,9 +2,9 @@
 import '@fontsource-variable/outfit';
 import '@fontsource-variable/jetbrains-mono';
 import '../styles/theme.css';
-import { getCollection } from 'astro:content';
-import { SITE_CONFIG } from '../config/site';
-import { Sparkles, Sun, Moon, Rss, ChevronDown, Search } from 'lucide-astro';
+import { getAllPosts } from '../lib/posts';
+import { getSiteSettings } from '../lib/site';
+import { Sparkles, Sun, Moon, Rss, ChevronDown, Search, Settings } from 'lucide-astro';
 
 interface Props {
   title: string;
@@ -12,18 +12,19 @@ interface Props {
   wide?: boolean;
 }
 
+const siteSettings = getSiteSettings();
 const {
   title,
-  description = SITE_CONFIG.description,
+  description = siteSettings.description,
   wide = false,
 } = Astro.props;
 
 const pathname = Astro.url.pathname;
 
-const allPosts = await getCollection('posts', ({ data }) => !data.draft);
+const allPosts = getAllPosts(false);
 const categoryCounts = new Map<string, number>();
 for (const post of allPosts) {
-  const cat = post.data.category;
+  const cat = post.category;
   categoryCounts.set(cat, (categoryCounts.get(cat) ?? 0) + 1);
 }
 const categories = Array.from(categoryCounts.entries());
@@ -38,7 +39,7 @@ const categories = Array.from(categoryCounts.entries());
     <meta name="description" content={description} />
     <meta name="theme-color" content="#f8fafc" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
-    <link rel="alternate" type="application/rss+xml" title={`${SITE_CONFIG.title} RSS`} href="/rss.xml" />
+    <link rel="alternate" type="application/rss+xml" title={`${siteSettings.title} RSS`} href="/rss.xml" />
     <script is:inline>
       (function () {
         try {
@@ -70,7 +71,7 @@ const categories = Array.from(categoryCounts.entries());
       <div class="header-inner">
         <a href="/" class="logo-section">
           <Sparkles class="logo-icon" />
-          <span class="logo-text">{SITE_CONFIG.title}</span>
+          <span class="logo-text">{siteSettings.title}</span>
         </a>
 
         <nav class="header-nav" aria-label="主导航">
@@ -124,6 +125,10 @@ const categories = Array.from(categoryCounts.entries());
             <Rss size={15} />
           </a>
 
+          <a href="/admin/" class="theme-toggle-btn" title="后台管理" aria-label="后台管理">
+            <Settings size={15} />
+          </a>
+
           <button
             type="button"
             id="theme-toggle"
@@ -138,7 +143,7 @@ const categories = Array.from(categoryCounts.entries());
       </div>
     </header>
 
-    <!-- 全局模糊搜索弹窗 (Ctrl + K) -->
+    <!-- 全局搜索弹窗 (Ctrl + K) -->
     <div id="search-backdrop" class="search-backdrop" role="dialog" aria-modal="true" aria-label="站内文章搜索">
       <div class="search-modal">
         <div class="search-input-wrap">
@@ -164,7 +169,7 @@ const categories = Array.from(categoryCounts.entries());
 
     <footer class="app-footer">
       <p>
-        Powered by <a href="https://astro.build" target="_blank" rel="noreferrer">Astro</a>
+        {siteSettings.footerText} · <a href="/admin/">管理后台</a>
       </p>
     </footer>
 
@@ -224,7 +229,6 @@ const categories = Array.from(categoryCounts.entries());
           });
         }
 
-        // ==================== 全局模糊搜索逻辑 ====================
         var backdrop = document.getElementById('search-backdrop');
         var searchTrigger = document.getElementById('search-trigger');
         var searchInput = document.getElementById('search-input');
@@ -241,7 +245,6 @@ const categories = Array.from(categoryCounts.entries());
             .replace(/"/g, '&quot;');
         }
 
-        // 子序列模糊匹配打分（支持跳字模糊匹配，如 mkd -> Markdown）
         function fuzzySubseqScore(query, target) {
           var qi = 0;
           var score = 0;
@@ -328,10 +331,6 @@ const categories = Array.from(categoryCounts.entries());
         }
 
         function loadIndexAndRender() {
-          if (searchIndex) {
-            renderResults(searchInput ? searchInput.value : '');
-            return;
-          }
           fetch('/search-index.json')
             .then(function (r) { return r.json(); })
             .then(function (data) {

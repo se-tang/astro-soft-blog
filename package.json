@@ -11,10 +11,13 @@
     "astro": "astro"
   },
   "dependencies": {
+    "@astrojs/node": "^9.5.5",
     "@astrojs/rss": "^4.0.12",
     "@fontsource-variable/jetbrains-mono": "^5.2.5",
     "@fontsource-variable/outfit": "^5.2.5",
     "astro": "^5.7.0",
-    "lucide-astro": "^0.487.0"
+    "js-yaml": "^5.5.0",
+    "lucide-astro": "^0.487.0",
+    "marked": "^18.2.1"
   }
 }

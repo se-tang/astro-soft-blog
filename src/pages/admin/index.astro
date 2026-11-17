@@ -1,0 +1,191 @@
+---
+import AdminLayout from '../../layouts/AdminLayout.astro';
+import { isAuthenticated } from '../../lib/auth';
+import { getAllPosts } from '../../lib/posts';
+import { PenSquare, Edit, Trash2, ExternalLink } from 'lucide-astro';
+
+if (!isAuthenticated(Astro.cookies)) {
+  return Astro.redirect('/admin/login/');
+}
+
+const posts = getAllPosts(true);
+const publishedCount = posts.filter((p) => !p.draft).length;
+const draftCount = posts.filter((p) => p.draft).length;
+const categoriesCount = new Set(posts.map((p) => p.category)).size;
+---
+
+<AdminLayout title="文章管理" activeNav="posts">
+  <div class="admin-topbar">
+    <h1 class="admin-page-title">文章管理</h1>
+    <a href="/admin/editor/" class="admin-btn admin-btn-primary">
+      <PenSquare size={15} /> 写新文章
+    </a>
+  </div>
+
+  <div class="admin-stats-grid">
+    <div class="glass-panel admin-stat-card">
+      <div class="admin-stat-label">全部文章</div>
+      <div class="admin-stat-value">{posts.length}</div>
+    </div>
+    <div class="glass-panel admin-stat-card">
+      <div class="admin-stat-label">已发布</div>
+      <div class="admin-stat-value" style="color:var(--neon-green);">{publishedCount}</div>
+    </div>
+    <div class="glass-panel admin-stat-card">
+      <div class="admin-stat-label">草稿箱</div>
+      <div class="admin-stat-value">{draftCount}</div>
+    </div>
+    <div class="glass-panel admin-stat-card">
+      <div class="admin-stat-label">文章分类</div>
+      <div class="admin-stat-value" style="color:var(--neon-purple);">{categoriesCount}</div>
+    </div>
+  </div>
+
+  <div class="glass-panel admin-toolbar">
+    <div style="display:flex;gap:8px;flex-wrap:wrap;">
+      <button type="button" class="guides-tab active" data-filter="all">全部 ({posts.length})</button>
+      <button type="button" class="guides-tab" data-filter="published">已发布 ({publishedCount})</button>
+      <button type="button" class="guides-tab" data-filter="draft">草稿 ({draftCount})</button>
+    </div>
+    <input
+      type="text"
+      id="admin-search"
+      class="admin-input"
+      placeholder="筛选文章标题或分类..."
+      style="max-width:260px;"
+    />
+  </div>
+
+  <div class="glass-panel admin-table-wrap">
+    <table class="admin-table" id="posts-table">
+      <thead>
+        <tr>
+          <th>标题</th>
+          <th>分类</th>
+          <th>标签</th>
+          <th>发布日期</th>
+          <th>状态</th>
+          <th style="text-align:right;">操作</th>
+        </tr>
+      </thead>
+      <tbody>
+        {posts.map((post) => (
+          <tr
+            data-status={post.draft ? 'draft' : 'published'}
+            data-search={`${post.title} ${post.category} ${post.tags.join(' ')}`.toLowerCase()}
+          >
+            <td>
+              <a
+                href={`/admin/editor/?slug=${encodeURIComponent(post.slug)}`}
+                style="font-weight:700;color:var(--text-primary);text-decoration:none;"
+              >
+                {post.title}
+              </a>
+              <div style="font-family:var(--font-mono);font-size:0.72rem;color:var(--text-secondary);">
+                /posts/{post.slug}/
+              </div>
+            </td>
+            <td>
+              <span class="post-category-badge">{post.category}</span>
+            </td>
+            <td>
+              <div class="post-tags">
+                {post.tags.map((tag) => (
+                  <span class="post-tag">#{tag}</span>
+                ))}
+              </div>
+            </td>
+            <td style="font-family:var(--font-mono);font-size:0.82rem;color:var(--text-secondary);">
+              {post.pubDate}
+            </td>
+            <td>
+              <span class:list={['status-badge', post.draft ? 'status-draft' : 'status-published']}>
+                {post.draft ? '草稿' : '已发布'}
+              </span>
+            </td>
+            <td style="text-align:right;white-space:nowrap;">
+              <div style="display:inline-flex;gap:6px;">
+                <a
+                  href={`/admin/editor/?slug=${encodeURIComponent(post.slug)}`}
+                  class="admin-btn"
+                  style="height:30px;padding:0 10px;font-size:0.78rem;"
+                >
+                  <Edit size={13} /> 编辑
+                </a>
+                {!post.draft && (
+                  <a
+                    href={`/posts/${post.slug}/`}
+                    target="_blank"
+                    class="admin-btn"
+                    style="height:30px;padding:0 10px;font-size:0.78rem;"
+                    title="前台查看"
+                  >
+                    <ExternalLink size={13} />
+                  </a>
+                )}
+                <button
+                  type="button"
+                  class="admin-btn admin-btn-danger delete-post-btn"
+                  data-slug={post.slug}
+                  data-title={post.title}
+                  style="height:30px;padding:0 10px;font-size:0.78rem;"
+                >
+                  <Trash2 size={13} />
+                </button>
+              </div>
+            </td>
+          </tr>
+        ))}
+      </tbody>
+    </table>
+  </div>
+
+  <script is:inline>
+    (function () {
+      var filterBtns = document.querySelectorAll('[data-filter]');
+      var searchInput = document.getElementById('admin-search');
+      var rows = document.querySelectorAll('#posts-table tbody tr');
+      var activeFilter = 'all';
+
+      function applyFilter() {
+        var q = (searchInput ? searchInput.value : '').trim().toLowerCase();
+        rows.forEach(function (row) {
+          var status = row.getAttribute('data-status');
+          var text = row.getAttribute('data-search') || '';
+          var okStatus = activeFilter === 'all' || status === activeFilter;
+          var okQuery = !q || text.indexOf(q) !== -1;
+          row.style.display = okStatus && okQuery ? '' : 'none';
+        });
+      }
+
+      filterBtns.forEach(function (btn) {
+        btn.addEventListener('click', function () {
+          activeFilter = btn.getAttribute('data-filter');
+          filterBtns.forEach(function (b) { b.classList.remove('active'); });
+          btn.classList.add('active');
+          applyFilter();
+        });
+      });
+
+      if (searchInput) {
+        searchInput.addEventListener('input', applyFilter);
+      }
+
+      document.querySelectorAll('.delete-post-btn').forEach(function (btn) {
+        btn.addEventListener('click', function () {
+          var slug = btn.getAttribute('data-slug');
+          var title = btn.getAttribute('data-title');
+          if (!confirm('确定要删除文章「' + title + '」吗？此操作不可恢复。')) return;
+          fetch('/api/admin/posts', {
+            method: 'DELETE',
+            headers: { 'content-type': 'application/json' },
+            body: JSON.stringify({ slug: slug }),
+          }).then(function (r) {
+            if (r.ok) window.location.reload();
+            else alert('删除失败');
+          });
+        });
+      });
+    })();
+  </script>
+</AdminLayout>

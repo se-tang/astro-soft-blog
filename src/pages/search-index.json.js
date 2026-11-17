@@ -1,12 +1,10 @@
-import { getCollection } from 'astro:content';
+import { getAllPosts } from '../lib/posts';
 
 export async function GET() {
-  const posts = (await getCollection('posts', ({ data }) => !data.draft)).sort(
-    (a, b) => b.data.pubDate.valueOf() - a.data.pubDate.valueOf()
-  );
+  const posts = getAllPosts(false);
 
   const index = posts.map((post) => {
-    const plainBody = (post.body || '')
+    const plainBody = (post.content || '')
       .replace(/```[\s\S]*?```/g, ' ')
       .replace(/[#>*`_\-\[\]()]/g, ' ')
       .replace(/\s+/g, ' ')
@@ -14,12 +12,12 @@ export async function GET() {
       .slice(0, 1200);
 
     return {
-      url: `/posts/${post.id}/`,
-      title: post.data.title,
-      description: post.data.description,
-      category: post.data.category,
-      tags: post.data.tags,
-      date: post.data.pubDate.toISOString().slice(0, 10),
+      url: `/posts/${post.slug}/`,
+      title: post.title,
+      description: post.description,
+      category: post.category,
+      tags: post.tags,
+      date: post.pubDate,
       body: plainBody,
     };
   });
@@ -27,6 +25,7 @@ export async function GET() {
   return new Response(JSON.stringify(index), {
     headers: {
       'content-type': 'application/json; charset=utf-8',
+      'cache-control': 'no-cache',
     },
   });
 }

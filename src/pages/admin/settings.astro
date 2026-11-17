@@ -1,0 +1,97 @@
+---
+import AdminLayout from '../../layouts/AdminLayout.astro';
+import { isAuthenticated } from '../../lib/auth';
+import { getSiteSettings } from '../../lib/site';
+import { Save } from 'lucide-astro';
+
+if (!isAuthenticated(Astro.cookies)) {
+  return Astro.redirect('/admin/login/');
+}
+
+const settings = getSiteSettings();
+---
+
+<AdminLayout title="站点设置" activeNav="settings">
+  <div class="admin-topbar">
+    <h1 class="admin-page-title">站点设置</h1>
+    <div style="display:flex;align-items:center;gap:10px;">
+      <span id="settings-toast" style="font-size:0.82rem;font-weight:700;color:var(--neon-green);display:none;"></span>
+      <button type="button" id="save-settings-btn" class="admin-btn admin-btn-primary">
+        <Save size={15} /> 保存设置
+      </button>
+    </div>
+  </div>
+
+  <div class="glass-panel" style="padding:24px;max-width:780px;display:flex;flex-direction:column;gap:16px;">
+    <div class="form-field">
+      <label for="site-title">博客名称</label>
+      <input type="text" id="site-title" class="admin-input" value={settings.title} />
+    </div>
+
+    <div class="form-field">
+      <label for="site-subtitle">副标题</label>
+      <input type="text" id="site-subtitle" class="admin-input" value={settings.subtitle} />
+    </div>
+
+    <div class="form-field">
+      <label for="site-desc">首页欢迎语 / SEO 简介</label>
+      <textarea id="site-desc" class="admin-textarea" rows="2">{settings.description}</textarea>
+    </div>
+
+    <div class="form-field">
+      <label for="site-footer">页脚文字</label>
+      <input type="text" id="site-footer" class="admin-input" value={settings.footerText} />
+    </div>
+
+    <div class="form-field">
+      <label for="site-about">「关于」页面内容（Markdown 格式）</label>
+      <textarea
+        id="site-about"
+        class="admin-textarea"
+        rows="8"
+        style="font-family:var(--font-mono);font-size:0.85rem;"
+      >{settings.aboutContent}</textarea>
+    </div>
+
+    <hr style="border:none;border-top:1px solid var(--border-neon);margin:4px 0;" />
+
+    <div class="form-field">
+      <label for="new-password">修改管理员密码（留空则保持当前密码不变）</label>
+      <input type="password" id="new-password" class="admin-input" placeholder="输入新密码..." />
+    </div>
+  </div>
+
+  <script is:inline>
+    (function () {
+      var btn = document.getElementById('save-settings-btn');
+      var toast = document.getElementById('settings-toast');
+      if (!btn) return;
+      btn.addEventListener('click', function () {
+        var payload = {
+          title: document.getElementById('site-title').value,
+          subtitle: document.getElementById('site-subtitle').value,
+          description: document.getElementById('site-desc').value,
+          footerText: document.getElementById('site-footer').value,
+          aboutContent: document.getElementById('site-about').value,
+          newPassword: document.getElementById('new-password').value,
+        };
+        fetch('/api/admin/settings', {
+          method: 'POST',
+          headers: { 'content-type': 'application/json' },
+          body: JSON.stringify(payload),
+        })
+          .then(function (r) { return r.json(); })
+          .then(function (data) {
+            if (!data.ok) throw new Error(data.error || '保存失败');
+            document.getElementById('new-password').value = '';
+            toast.textContent = '设置已保存并立即生效！';
+            toast.style.display = 'inline';
+            setTimeout(function () { toast.style.display = 'none'; }, 2500);
+          })
+          .catch(function (err) {
+            alert(err.message || '保存失败');
+          });
+      });
+    })();
+  </script>
+</AdminLayout>

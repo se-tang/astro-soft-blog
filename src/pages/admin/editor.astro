@@ -1,0 +1,251 @@
+---
+import AdminLayout from '../../layouts/AdminLayout.astro';
+import { isAuthenticated } from '../../lib/auth';
+import { getAllPosts, getPostBySlug } from '../../lib/posts';
+import { Save, Send, ArrowLeft } from 'lucide-astro';
+
+if (!isAuthenticated(Astro.cookies)) {
+  return Astro.redirect('/admin/login/');
+}
+
+const slugParam = Astro.url.searchParams.get('slug') || '';
+const editingPost = slugParam ? getPostBySlug(slugParam, true) : null;
+const allCategories = Array.from(new Set(getAllPosts(true).map((p) => p.category)));
+const today = new Date().toISOString().slice(0, 10);
+---
+
+<AdminLayout title={editingPost ? `编辑：${editingPost.title}` : '写新文章'} activeNav="editor">
+  <div class="admin-topbar">
+    <div style="display:flex;align-items:center;gap:12px;">
+      <a href="/admin/" class="admin-btn" style="height:34px;">
+        <ArrowLeft size={14} /> 返回列表
+      </a>
+      <h1 class="admin-page-title">{editingPost ? '编辑文章' : '写新文章'}</h1>
+    </div>
+
+    <div style="display:flex;align-items:center;gap:10px;">
+      <span id="save-toast" style="font-size:0.82rem;font-weight:700;color:var(--neon-green);display:none;"></span>
+      <button type="button" id="save-draft-btn" class="admin-btn">
+        <Save size={14} /> 存为草稿
+      </button>
+      <button type="button" id="publish-btn" class="admin-btn admin-btn-primary">
+        <Send size={14} /> 发布文章
+      </button>
+    </div>
+  </div>
+
+  <div class="editor-layout">
+    <!-- 左侧主编辑区：标题 + 分屏 Markdown 编辑与实时预览 -->
+    <div style="display:flex;flex-direction:column;gap:14px;min-width:0;">
+      <div class="glass-panel" style="padding:14px 16px;">
+        <input
+          type="text"
+          id="post-title"
+          class="admin-input"
+          value={editingPost ? editingPost.title : ''}
+          placeholder="输入文章标题..."
+          style="font-size:1.15rem;font-weight:800;border:none;background:transparent;padding:4px 0;"
+        />
+      </div>
+
+      <div class="editor-split">
+        <div class="glass-panel editor-pane">
+          <div class="editor-toolbar-row">
+            <button type="button" class="editor-tool-btn" data-insert="## ">H2</button>
+            <button type="button" class="editor-tool-btn" data-insert="### ">H3</button>
+            <button type="button" class="editor-tool-btn" data-wrap="**">加粗</button>
+            <button type="button" class="editor-tool-btn" data-wrap="`">行内代码</button>
+            <button type="button" class="editor-tool-btn" data-insert="\n> ">引用</button>
+            <button type="button" class="editor-tool-btn" data-insert="\n```bash\n\n```\n">代码块</button>
+            <button type="button" class="editor-tool-btn" data-insert="[链接文字](https://)">链接</button>
+          </div>
+          <textarea
+            id="post-content"
+            class="editor-textarea"
+            placeholder="使用 Markdown 编写正文..."
+          >{editingPost ? editingPost.content : ''}</textarea>
+        </div>
+
+        <div class="glass-panel editor-pane">
+          <div class="editor-toolbar-row" style="justify-content:space-between;">
+            <span style="font-size:0.78rem;font-weight:700;color:var(--text-secondary);">实时预览</span>
+          </div>
+          <div id="post-preview" class="editor-preview prose" set:html={editingPost ? editingPost.html : '<p style="color:var(--text-secondary);">在左侧输入 Markdown 即可实时预览排版效果...</p>'} />
+        </div>
+      </div>
+    </div>
+
+    <!-- 右侧属性设置栏（仿 Halo 右侧抽屉） -->
+    <aside class="glass-panel editor-drawer">
+      <h2 style="margin:0 0 4px;font-size:0.98rem;font-weight:800;">文章设置</h2>
+
+      <div class="form-field">
+        <label for="post-slug">访问路径 (Slug)</label>
+        <input
+          type="text"
+          id="post-slug"
+          class="admin-input"
+          value={editingPost ? editingPost.slug : ''}
+          placeholder="如 my-first-post（留空自动生成）"
+          style="font-family:var(--font-mono);font-size:0.82rem;"
+        />
+      </div>
+
+      <div class="form-field">
+        <label for="post-category">文章分类（可输入新分类）</label>
+        <input
+          type="text"
+          id="post-category"
+          class="admin-input"
+          list="category-options"
+          value={editingPost ? editingPost.category : '随笔'}
+          placeholder="如：新手指南 / 随笔"
+        />
+        <datalist id="category-options">
+          {allCategories.map((cat) => (
+            <option value={cat} />
+          ))}
+        </datalist>
+      </div>
+
+      <div class="form-field">
+        <label for="post-tags">文章标签（用逗号分隔）</label>
+        <input
+          type="text"
+          id="post-tags"
+          class="admin-input"
+          value={editingPost ? editingPost.tags.join(', ') : ''}
+          placeholder="如：Linux, Astro, 教程"
+        />
+      </div>
+
+      <div class="form-field">
+        <label for="post-date">发布日期</label>
+        <input
+          type="date"
+          id="post-date"
+          class="admin-input"
+          value={editingPost ? editingPost.pubDate : today}
+          style="font-family:var(--font-mono);"
+        />
+      </div>
+
+      <div class="form-field">
+        <label for="post-desc">文章摘要</label>
+        <textarea
+          id="post-desc"
+          class="admin-textarea"
+          rows="3"
+          placeholder="一句话概括这篇文章..."
+        >{editingPost ? editingPost.description : ''}</textarea>
+      </div>
+
+      <input type="hidden" id="original-slug" value={editingPost ? editingPost.slug : ''} />
+    </aside>
+  </div>
+
+  <script is:inline>
+    (function () {
+      var titleEl = document.getElementById('post-title');
+      var slugEl = document.getElementById('post-slug');
+      var origSlugEl = document.getElementById('original-slug');
+      var catEl = document.getElementById('post-category');
+      var tagsEl = document.getElementById('post-tags');
+      var dateEl = document.getElementById('post-date');
+      var descEl = document.getElementById('post-desc');
+      var contentEl = document.getElementById('post-content');
+      var previewEl = document.getElementById('post-preview');
+      var toastEl = document.getElementById('save-toast');
+
+      // Markdown 快捷工具栏
+      document.querySelectorAll('.editor-tool-btn').forEach(function (btn) {
+        btn.addEventListener('click', function () {
+          if (!contentEl) return;
+          var start = contentEl.selectionStart;
+          var end = contentEl.selectionEnd;
+          var val = contentEl.value;
+          var insert = btn.getAttribute('data-insert');
+          var wrap = btn.getAttribute('data-wrap');
+
+          if (wrap) {
+            var selected = val.slice(start, end) || '文字';
+            contentEl.value = val.slice(0, start) + wrap + selected + wrap + val.slice(end);
+            contentEl.focus();
+          } else if (insert) {
+            contentEl.value = val.slice(0, start) + insert.replace(/\\n/g, '\n') + val.slice(end);
+            contentEl.focus();
+          }
+          triggerPreview();
+        });
+      });
+
+      var previewTimer = null;
+      function triggerPreview() {
+        clearTimeout(previewTimer);
+        previewTimer = setTimeout(function () {
+          fetch('/api/admin/preview', {
+            method: 'POST',
+            headers: { 'content-type': 'application/json' },
+            body: JSON.stringify({ content: contentEl.value }),
+          })
+            .then(function (r) { return r.json(); })
+            .then(function (data) {
+              if (previewEl) previewEl.innerHTML = data.html || '';
+            });
+        }, 250);
+      }
+
+      if (contentEl) {
+        contentEl.addEventListener('input', triggerPreview);
+      }
+
+      function savePost(isDraft) {
+        var title = titleEl.value.trim();
+        if (!title) {
+          alert('请先输入文章标题');
+          titleEl.focus();
+          return;
+        }
+        var payload = {
+          title: title,
+          slug: slugEl.value.trim() || title,
+          originalSlug: origSlugEl.value.trim(),
+          category: catEl.value.trim() || '随笔',
+          tags: tagsEl.value,
+          pubDate: dateEl.value,
+          description: descEl.value.trim(),
+          draft: isDraft,
+          content: contentEl.value,
+        };
+
+        fetch('/api/admin/posts', {
+          method: 'POST',
+          headers: { 'content-type': 'application/json' },
+          body: JSON.stringify(payload),
+        })
+          .then(function (r) { return r.json(); })
+          .then(function (data) {
+            if (!data.ok) throw new Error(data.error || '保存失败');
+            origSlugEl.value = data.post.slug;
+            slugEl.value = data.post.slug;
+            toastEl.textContent = isDraft ? '草稿已保存' : '文章已发布！';
+            toastEl.style.display = 'inline';
+            setTimeout(function () { toastEl.style.display = 'none'; }, 2500);
+            if (!window.location.search.includes('slug=')) {
+              history.replaceState(null, '', '/admin/editor/?slug=' + encodeURIComponent(data.post.slug));
+            }
+          })
+          .catch(function (err) {
+            alert(err.message || '保存出错');
+          });
+      }
+
+      document.getElementById('save-draft-btn').addEventListener('click', function () {
+        savePost(true);
+      });
+      document.getElementById('publish-btn').addEventListener('click', function () {
+        savePost(false);
+      });
+    })();
+  </script>
+</AdminLayout>

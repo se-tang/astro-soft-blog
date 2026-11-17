@@ -1,20 +1,23 @@
 import rss from '@astrojs/rss';
-import { getCollection } from 'astro:content';
+import { getAllPosts } from '../lib/posts';
+import { getSiteSettings } from '../lib/site';
 
 export async function GET(context) {
-  const posts = (await getCollection('posts', ({ data }) => !data.draft)).sort(
-    (a, b) => b.data.pubDate.valueOf() - a.data.pubDate.valueOf()
-  );
+  const posts = getAllPosts(false);
+  const siteSettings = getSiteSettings();
+  const proto = context.request.headers.get('x-forwarded-proto') || new URL(context.request.url).protocol.replace(':', '');
+  const host = context.request.headers.get('x-forwarded-host') || context.request.headers.get('host') || new URL(context.request.url).host;
+  const origin = `${proto}://${host}`;
 
   return rss({
-    title: 'Soft-Blog',
-    description: '柔和毛玻璃风格个人博客',
-    site: context.site,
+    title: siteSettings.title,
+    description: siteSettings.description,
+    site: origin,
     items: posts.map((post) => ({
-      title: post.data.title,
-      pubDate: post.data.pubDate,
-      description: post.data.description,
-      link: `/posts/${post.id}/`,
+      title: post.title,
+      pubDate: new Date(post.pubDate),
+      description: post.description,
+      link: `/posts/${post.slug}/`,
     })),
   });
 }

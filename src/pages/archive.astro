@@ -1,21 +1,21 @@
 ---
-import { getCollection } from 'astro:content';
 import BaseLayout from '../layouts/BaseLayout.astro';
+import { getAllPosts } from '../lib/posts';
+import { getSiteSettings } from '../lib/site';
 
-const posts = (await getCollection('posts', ({ data }) => !data.draft)).sort(
-  (a, b) => b.data.pubDate.valueOf() - a.data.pubDate.valueOf()
-);
+const siteSettings = getSiteSettings();
+const posts = getAllPosts(false);
 
 const byYear = new Map<number, typeof posts>();
 for (const post of posts) {
-  const year = post.data.pubDate.getFullYear();
+  const year = new Date(post.pubDate).getFullYear() || new Date().getFullYear();
   if (!byYear.has(year)) byYear.set(year, []);
   byYear.get(year)!.push(post);
 }
 const years = Array.from(byYear.entries()).sort((a, b) => b[0] - a[0]);
 ---
 
-<BaseLayout title="文章归档 | Soft-Blog" description="按年份整理的所有 Markdown 文章归档。">
+<BaseLayout title={`文章归档 | ${siteSettings.title}`} description="按年份整理的所有文章归档。">
   <section class="glass-panel guides-header">
     <h1 class="guides-h1">文章归档</h1>
     <p class="guides-lede">按时间线整理的所有文章，目前共 {posts.length} 篇。</p>
@@ -30,12 +30,12 @@ const years = Array.from(byYear.entries()).sort((a, b) => b[0] - a[0]);
         {list.map((post) => (
           <li style="display: flex; align-items: baseline; gap: 14px; flex-wrap: wrap;">
             <span style="font-family: var(--font-mono); font-size: 0.82rem; color: var(--text-secondary);">
-              {post.data.pubDate.toISOString().slice(0, 10)}
+              {post.pubDate}
             </span>
-            <a href={`/posts/${post.id}/`} style="color: var(--text-primary); font-weight: 700; text-decoration: none;">
-              {post.data.title}
+            <a href={`/posts/${post.slug}/`} style="color: var(--text-primary); font-weight: 700; text-decoration: none;">
+              {post.title}
             </a>
-            <span class="post-category-badge" style="font-size: 0.72rem;">{post.data.category}</span>
+            <span class="post-category-badge" style="font-size: 0.72rem;">{post.category}</span>
           </li>
         ))}
       </ul>

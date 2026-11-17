@@ -1,0 +1,107 @@
+---
+import '@fontsource-variable/outfit';
+import '@fontsource-variable/jetbrains-mono';
+import '../../styles/theme.css';
+import '../../styles/admin.css';
+import { isAuthenticated } from '../../lib/auth';
+import { getSiteSettings } from '../../lib/site';
+import { Sparkles, Lock } from 'lucide-astro';
+
+if (isAuthenticated(Astro.cookies)) {
+  return Astro.redirect('/admin/');
+}
+
+const siteSettings = getSiteSettings();
+---
+
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>登录后台 | {siteSettings.title}</title>
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <script is:inline>
+      (function () {
+        try {
+          var saved = localStorage.getItem('soft-blog-theme');
+          var prefersDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+          if (saved === 'dark' || (!saved && prefersDark)) {
+            document.documentElement.dataset.theme = 'dark';
+          }
+        } catch (e) {}
+      })();
+    </script>
+  </head>
+  <body style="justify-content:center;align-items:center;padding:20px;">
+    <script is:inline>
+      if (document.documentElement.dataset.theme === 'dark') {
+        document.body.classList.add('dark-theme');
+      }
+    </script>
+
+    <div class="ambient-bg" aria-hidden="true">
+      <div class="ambient-grid"></div>
+      <div class="blob blob-cyan"></div>
+      <div class="blob blob-purple"></div>
+    </div>
+
+    <div class="glass-panel" style="width:100%;max-width:400px;padding:34px 30px;">
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:8px;">
+        <Sparkles size={20} style="color:var(--neon-cyan);" />
+        <h1 style="margin:0;font-size:1.35rem;font-weight:800;">{siteSettings.title} 后台</h1>
+      </div>
+      <p style="margin:0 0 22px;font-size:0.86rem;color:var(--text-secondary);">
+        输入管理员密码以管理文章、分类与站点设置。
+      </p>
+
+      <form id="login-form" style="display:flex;flex-direction:column;gap:14px;">
+        <div class="form-field">
+          <label for="password">管理员密码</label>
+          <input
+            type="password"
+            id="password"
+            class="admin-input"
+            placeholder="默认密码: admin123"
+            required
+            autofocus
+          />
+        </div>
+        <div id="login-error" style="display:none;color:#ef4444;font-size:0.82rem;font-weight:700;"></div>
+        <button type="submit" class="admin-btn admin-btn-primary" style="height:40px;width:100%;">
+          <Lock size={15} /> 登录控制台
+        </button>
+      </form>
+
+      <div style="margin-top:18px;text-align:center;">
+        <a href="/" style="font-size:0.82rem;color:var(--text-secondary);text-decoration:none;">← 返回博客首页</a>
+      </div>
+    </div>
+
+    <script is:inline>
+      (function () {
+        var form = document.getElementById('login-form');
+        var input = document.getElementById('password');
+        var err = document.getElementById('login-error');
+        if (!form) return;
+        form.addEventListener('submit', function (e) {
+          e.preventDefault();
+          err.style.display = 'none';
+          fetch('/api/admin/login', {
+            method: 'POST',
+            headers: { 'content-type': 'application/json' },
+            body: JSON.stringify({ password: input.value }),
+          })
+            .then(function (r) {
+              if (!r.ok) throw new Error('密码错误');
+              window.location.href = '/admin/';
+            })
+            .catch(function (ex) {
+              err.textContent = ex.message || '登录失败';
+              err.style.display = 'block';
+            });
+        });
+      })();
+    </script>
+  </body>
+</html>

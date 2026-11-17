@@ -1,34 +1,15 @@
 ---
-import { getCollection } from 'astro:content';
 import BaseLayout from '../../layouts/BaseLayout.astro';
+import { getAllPosts } from '../../lib/posts';
+import { getSiteSettings } from '../../lib/site';
 import { Calendar, FolderOpen, ArrowRight } from 'lucide-astro';
 
-export async function getStaticPaths() {
-  const posts = (await getCollection('posts', ({ data }) => !data.draft)).sort(
-    (a, b) => b.data.pubDate.valueOf() - a.data.pubDate.valueOf()
-  );
-
-  const byCategory = new Map<string, typeof posts>();
-  for (const post of posts) {
-    const cat = post.data.category;
-    if (!byCategory.has(cat)) byCategory.set(cat, []);
-    byCategory.get(cat)!.push(post);
-  }
-
-  return Array.from(byCategory.entries()).map(([category, list]) => ({
-    params: { category },
-    props: { category, posts: list },
-  }));
-}
-
-const { category, posts } = Astro.props;
-
-function formatDate(date: Date) {
-  return date.toISOString().slice(0, 10);
-}
+const category = decodeURIComponent((Astro.params.category || '').replace(/\/+$/, ''));
+const siteSettings = getSiteSettings();
+const posts = getAllPosts(false).filter((p) => p.category === category);
 ---
 
-<BaseLayout title={`${category} | 分类 | Soft-Blog`} description={`「${category}」分类下的所有文章`}>
+<BaseLayout title={`${category} | 分类 | ${siteSettings.title}`} description={`「${category}」分类下的所有文章`}>
   <nav class="breadcrumbs" aria-label="面包屑导航">
     <a href="/" class="bc-link">首页</a>
     <span class="bc-sep">/</span>
@@ -44,22 +25,22 @@ function formatDate(date: Date) {
   <ul class="guides-list">
     {posts.map((post) => (
       <li class="glass-panel post-card">
-        <a href={`/posts/${post.id}/`} class="post-card-link">
+        <a href={`/posts/${post.slug}/`} class="post-card-link">
           <div class="post-card-meta">
             <span class="post-category-badge">
               <FolderOpen size={12} style="display:inline;vertical-align:-2px;margin-right:4px;" />
-              {post.data.category}
+              {post.category}
             </span>
             <span>
               <Calendar size={12} style="display:inline;vertical-align:-2px;margin-right:4px;" />
-              {formatDate(post.data.pubDate)}
+              {post.pubDate}
             </span>
           </div>
-          <h2 class="post-card-title">{post.data.title}</h2>
-          <p class="post-card-desc">{post.data.description}</p>
+          <h2 class="post-card-title">{post.title}</h2>
+          <p class="post-card-desc">{post.description}</p>
           <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;">
             <div class="post-tags">
-              {post.data.tags.map((tag) => (
+              {post.tags.map((tag) => (
                 <span class="post-tag">#{tag}</span>
               ))}
             </div>

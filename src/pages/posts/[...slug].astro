@@ -1,32 +1,26 @@
 ---
-import { getCollection, render } from 'astro:content';
 import BaseLayout from '../../layouts/BaseLayout.astro';
+import { getAllPosts, getPostBySlug } from '../../lib/posts';
+import { getSiteSettings } from '../../lib/site';
 import { Calendar, FolderOpen, ArrowLeft, BookOpen, List, ArrowUp } from 'lucide-astro';
 
-export async function getStaticPaths() {
-  const posts = (await getCollection('posts', ({ data }) => !data.draft)).sort(
-    (a, b) => b.data.pubDate.valueOf() - a.data.pubDate.valueOf()
-  );
-  return posts.map((post) => ({
-    params: { slug: post.id },
-    props: { post, allPosts: posts },
-  }));
+const rawSlug = (Astro.params.slug || '').replace(/\/+$/, '');
+const post = getPostBySlug(rawSlug, false);
+
+if (!post) {
+  return Astro.redirect('/');
 }
 
-const { post, allPosts } = Astro.props;
-const { Content, headings } = await render(post);
-const tocHeadings = headings.filter((h) => h.depth >= 2 && h.depth <= 4);
-
-function formatDate(date: Date) {
-  return date.toISOString().slice(0, 10);
-}
+const siteSettings = getSiteSettings();
+const allPosts = getAllPosts(false);
+const tocHeadings = post.headings.filter((h) => h.depth >= 2 && h.depth <= 4);
 ---
 
-<BaseLayout title={`${post.data.title} | Soft-Blog`} description={post.data.description} wide={true}>
+<BaseLayout title={`${post.title} | ${siteSettings.title}`} description={post.description} wide={true}>
   <nav class="breadcrumbs" aria-label="面包屑导航">
     <a href="/" class="bc-link">首页</a>
     <span class="bc-sep">/</span>
-    <span class="bc-current">{post.data.title}</span>
+    <span class="bc-current">{post.title}</span>
   </nav>
 
   <div class="doc-shell">
@@ -42,12 +36,12 @@ function formatDate(date: Date) {
       <nav class="sidebar-nav">
         {allPosts.map((item) => (
           <a
-            href={`/posts/${item.id}/`}
-            class:list={['doc-nav-item', { active: item.id === post.id }]}
-            title={item.data.title}
+            href={`/posts/${item.slug}/`}
+            class:list={['doc-nav-item', { active: item.slug === post.slug }]}
+            title={item.title}
           >
             <span class="dni-dot" aria-hidden="true"></span>
-            <span class="dni-title">{item.data.title}</span>
+            <span class="dni-title">{item.title}</span>
           </a>
         ))}
       </nav>
@@ -60,27 +54,25 @@ function formatDate(date: Date) {
           <div class="post-card-meta" style="margin-bottom: 12px;">
             <span class="post-category-badge">
               <FolderOpen size={12} style="display:inline;vertical-align:-2px;margin-right:4px;" />
-              {post.data.category}
+              {post.category}
             </span>
             <span>
               <Calendar size={12} style="display:inline;vertical-align:-2px;margin-right:4px;" />
-              发布于 {formatDate(post.data.pubDate)}
+              发布于 {post.pubDate}
             </span>
           </div>
-          <h1 class="article-title">{post.data.title}</h1>
-          <p class="guides-lede" style="margin-top: 12px;">{post.data.description}</p>
-          {post.data.tags.length > 0 && (
+          <h1 class="article-title">{post.title}</h1>
+          <p class="guides-lede" style="margin-top: 12px;">{post.description}</p>
+          {post.tags.length > 0 && (
             <div class="post-tags" style="margin-top: 14px;">
-              {post.data.tags.map((tag) => (
+              {post.tags.map((tag) => (
                 <span class="post-tag">#{tag}</span>
               ))}
             </div>
           )}
         </header>
 
-        <div class="prose" id="article-prose">
-          <Content />
-        </div>
+        <div class="prose" id="article-prose" set:html={post.html} />
       </article>
 
       <div style="margin-top: 20px;">

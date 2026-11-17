@@ -1,0 +1,141 @@
+---
+import '@fontsource-variable/outfit';
+import '@fontsource-variable/jetbrains-mono';
+import '../styles/theme.css';
+import '../styles/admin.css';
+import { isUsingDefaultPassword } from '../lib/auth';
+import { getSiteSettings } from '../lib/site';
+import {
+  Sparkles,
+  FileText,
+  PenSquare,
+  Tags,
+  Settings,
+  ExternalLink,
+  LogOut,
+  Sun,
+  Moon,
+} from 'lucide-astro';
+
+interface Props {
+  title: string;
+  activeNav?: 'posts' | 'editor' | 'taxonomies' | 'settings';
+}
+
+const { title, activeNav = 'posts' } = Astro.props;
+const siteSettings = getSiteSettings();
+const defaultPwd = isUsingDefaultPassword();
+---
+
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>{title} | 后台管理</title>
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <script is:inline>
+      (function () {
+        try {
+          var saved = localStorage.getItem('soft-blog-theme');
+          var prefersDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+          if (saved === 'dark' || (!saved && prefersDark)) {
+            document.documentElement.dataset.theme = 'dark';
+          }
+        } catch (e) {}
+      })();
+    </script>
+  </head>
+  <body>
+    <script is:inline>
+      if (document.documentElement.dataset.theme === 'dark') {
+        document.body.classList.add('dark-theme');
+      }
+    </script>
+
+    <div class="ambient-bg" aria-hidden="true">
+      <div class="ambient-grid"></div>
+      <div class="blob blob-cyan"></div>
+      <div class="blob blob-purple"></div>
+    </div>
+
+    <div class="admin-shell">
+      <aside class="admin-sidebar">
+        <a href="/admin/" class="admin-brand">
+          <Sparkles size={18} style="color: var(--neon-cyan);" />
+          <span>{siteSettings.title}</span>
+          <span class="admin-brand-badge">Admin</span>
+        </a>
+
+        <nav class="admin-nav">
+          <a href="/admin/" class:list={['admin-nav-item', { active: activeNav === 'posts' }]}>
+            <FileText size={16} /> 文章管理
+          </a>
+          <a href="/admin/editor/" class:list={['admin-nav-item', { active: activeNav === 'editor' }]}>
+            <PenSquare size={16} /> 写新文章
+          </a>
+          <a href="/admin/taxonomies/" class:list={['admin-nav-item', { active: activeNav === 'taxonomies' }]}>
+            <Tags size={16} /> 分类与标签
+          </a>
+          <a href="/admin/settings/" class:list={['admin-nav-item', { active: activeNav === 'settings' }]}>
+            <Settings size={16} /> 站点设置
+          </a>
+        </nav>
+
+        <div class="admin-sidebar-footer">
+          <button type="button" id="admin-theme-toggle" class="admin-nav-item">
+            <Sun size={16} class="icon-sun" />
+            <Moon size={16} class="icon-moon" />
+            <span>切换主题</span>
+          </button>
+          <a href="/" target="_blank" class="admin-nav-item">
+            <ExternalLink size={16} /> 访问前台博客
+          </a>
+          <button type="button" id="admin-logout-btn" class="admin-nav-item" style="color:#ef4444;">
+            <LogOut size={16} /> 退出登录
+          </button>
+        </div>
+      </aside>
+
+      <main class="admin-main">
+        {defaultPwd && (
+          <div class="admin-alert">
+            <span>当前仍在使用默认管理员密码（admin123），建议前往「站点设置」尽快修改。</span>
+            <a href="/admin/settings/" class="admin-btn" style="height:30px;font-size:0.78rem;">去修改</a>
+          </div>
+        )}
+        <slot />
+      </main>
+    </div>
+
+    <style>
+      .icon-sun { display: none; }
+      .icon-moon { display: inline-block; }
+      :global(body.dark-theme) .icon-sun { display: inline-block; }
+      :global(body.dark-theme) .icon-moon { display: none; }
+    </style>
+
+    <script is:inline>
+      (function () {
+        var themeBtn = document.getElementById('admin-theme-toggle');
+        if (themeBtn) {
+          themeBtn.addEventListener('click', function () {
+            var isDark = document.body.classList.toggle('dark-theme');
+            try {
+              localStorage.setItem('soft-blog-theme', isDark ? 'dark' : 'light');
+            } catch (e) {}
+          });
+        }
+
+        var logoutBtn = document.getElementById('admin-logout-btn');
+        if (logoutBtn) {
+          logoutBtn.addEventListener('click', function () {
+            fetch('/api/admin/logout', { method: 'POST' }).then(function () {
+              window.location.href = '/admin/login/';
+            });
+          });
+        }
+      })();
+    </script>
+  </body>
+</html>

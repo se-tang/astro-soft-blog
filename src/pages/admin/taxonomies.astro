@@ -1,0 +1,106 @@
+---
+import AdminLayout from '../../layouts/AdminLayout.astro';
+import { isAuthenticated } from '../../lib/auth';
+import { getAllPosts } from '../../lib/posts';
+
+if (!isAuthenticated(Astro.cookies)) {
+  return Astro.redirect('/admin/login/');
+}
+
+const posts = getAllPosts(true);
+const categoryMap = new Map<string, number>();
+const tagMap = new Map<string, number>();
+
+for (const p of posts) {
+  categoryMap.set(p.category, (categoryMap.get(p.category) ?? 0) + 1);
+  for (const t of p.tags) {
+    tagMap.set(t, (tagMap.get(t) ?? 0) + 1);
+  }
+}
+
+const categories = Array.from(categoryMap.entries()).sort((a, b) => b[1] - a[1]);
+const tags = Array.from(tagMap.entries()).sort((a, b) => b[1] - a[1]);
+---
+
+<AdminLayout title="分类与标签" activeNav="taxonomies">
+  <div class="admin-topbar">
+    <h1 class="admin-page-title">分类与标签管理</h1>
+  </div>
+
+  <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(320px,1fr));gap:18px;">
+    <section class="glass-panel" style="padding:22px;">
+      <h2 style="margin:0 0 14px;font-size:1.05rem;font-weight:800;">文章分类 ({categories.length})</h2>
+      <div style="display:flex;flex-direction:column;gap:10px;">
+        {categories.map(([name, count]) => (
+          <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;padding:10px 12px;border-radius:10px;border:1px solid var(--border-neon);">
+            <div>
+              <span class="post-category-badge">{name}</span>
+              <span style="margin-left:8px;font-family:var(--font-mono);font-size:0.78rem;color:var(--text-secondary);">
+                {count} 篇文章
+              </span>
+            </div>
+            <button
+              type="button"
+              class="admin-btn rename-btn"
+              data-type="category"
+              data-name={name}
+              style="height:30px;padding:0 10px;font-size:0.76rem;"
+            >
+              重命名
+            </button>
+          </div>
+        ))}
+      </div>
+    </section>
+
+    <section class="glass-panel" style="padding:22px;">
+      <h2 style="margin:0 0 14px;font-size:1.05rem;font-weight:800;">文章标签 ({tags.length})</h2>
+      <div style="display:flex;flex-direction:column;gap:10px;">
+        {tags.map(([name, count]) => (
+          <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;padding:10px 12px;border-radius:10px;border:1px solid var(--border-neon);">
+            <div>
+              <span class="post-tag">#{name}</span>
+              <span style="margin-left:8px;font-family:var(--font-mono);font-size:0.78rem;color:var(--text-secondary);">
+                {count} 篇文章
+              </span>
+            </div>
+            <button
+              type="button"
+              class="admin-btn rename-btn"
+              data-type="tag"
+              data-name={name}
+              style="height:30px;padding:0 10px;font-size:0.76rem;"
+            >
+              重命名
+            </button>
+          </div>
+        ))}
+      </div>
+    </section>
+  </div>
+
+  <script is:inline>
+    (function () {
+      document.querySelectorAll('.rename-btn').forEach(function (btn) {
+        btn.addEventListener('click', function () {
+          var type = btn.getAttribute('data-type');
+          var oldName = btn.getAttribute('data-name');
+          var label = type === 'category' ? '分类' : '标签';
+          var newName = prompt('请输入「' + oldName + '」的新' + label + '名称：', oldName);
+          if (!newName || newName.trim() === '' || newName.trim() === oldName) return;
+
+          fetch('/api/admin/taxonomies', {
+            method: 'POST',
+            headers: { 'content-type': 'application/json' },
+            body: JSON.stringify({ type: type, oldName: oldName, newName: newName.trim() }),
+          })
+            .then(function (r) { return r.json(); })
+            .then(function (data) {
+              if (data.ok) window.location.reload();
+              else alert(data.error || '修改失败');
+            });
+        });
+      });
+    })();
+  </script>
+</AdminLayout>

@@ -1,14 +1,14 @@
 import { defineConfig } from 'astro/config';
+import node from '@astrojs/node';
 
 export default defineConfig({
   site: 'https://__site_origin__',
-  markdown: {
-    shikiConfig: {
-      themes: {
-        light: 'github-light',
-        dark: 'github-dark',
-      },
-      wrap: true,
-    },
+  output: 'server',
+  adapter: node({
+    mode: 'standalone',
+  }),
+  server: {
+    host: true,
+    port: 4321,
   },
 });
