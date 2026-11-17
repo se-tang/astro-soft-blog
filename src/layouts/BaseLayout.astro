@@ -9,11 +9,13 @@ import { Sparkles, Sun, Moon, Rss, ChevronDown, Search } from 'lucide-astro';
 interface Props {
   title: string;
   description?: string;
+  wide?: boolean;
 }
 
 const {
   title,
   description = SITE_CONFIG.description,
+  wide = false,
 } = Astro.props;
 
 const pathname = Astro.url.pathname;
@@ -156,7 +158,7 @@ const categories = Array.from(categoryCounts.entries());
       </div>
     </div>
 
-    <main class="main-container">
+    <main class:list={['main-container', { 'main-container--wide': wide }]}>
       <slot />
     </main>
 
