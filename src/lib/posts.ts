@@ -139,7 +139,18 @@ export async function savePost(
   }
 
   await db.batch(stmts);
-  return (await getPostBySlug(env, targetSlug, true))!;
+  return {
+    slug: targetSlug,
+    title: input.title.trim() || '未命名文章',
+    description: input.description.trim(),
+    pubDate: input.pubDate || new Date().toISOString().slice(0, 10),
+    category: input.category.trim() || '随笔',
+    tags: input.tags.filter(Boolean),
+    draft: Boolean(input.draft),
+    content: input.content || '',
+    html: '',
+    headings: [],
+  };
 }
 
 export async function deletePost(env: RuntimeEnv, slug: string): Promise<boolean> {

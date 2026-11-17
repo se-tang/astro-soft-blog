@@ -27,16 +27,16 @@ const today = new Date().toISOString().slice(0, 10);
     <div style="display:flex;align-items:center;gap:10px;">
       <span id="save-toast" style="font-size:0.82rem;font-weight:700;color:var(--neon-green);display:none;"></span>
       <button type="button" id="save-draft-btn" class="admin-btn">
-        <Save size={14} /> 存为草稿
+        <Save size={14} /> <span>存为草稿</span>
       </button>
       <button type="button" id="publish-btn" class="admin-btn admin-btn-primary">
-        <Send size={14} /> 发布文章
+        <Send size={14} /> <span>发布文章</span>
       </button>
     </div>
   </div>
 
   <div class="editor-layout">
-    <!-- 左侧主编辑区：标题 + 分屏 Markdown 编辑与实时预览 -->
+    <!-- 左侧主编辑区：标题 + 分屏 Markdown 编辑与 0ms 实时预览 -->
     <div style="display:flex;flex-direction:column;gap:14px;min-width:0;">
       <div class="glass-panel" style="padding:14px 16px;">
         <input
@@ -59,6 +59,27 @@ const today = new Date().toISOString().slice(0, 10);
             <button type="button" class="editor-tool-btn" data-insert="\n> ">引用</button>
             <button type="button" class="editor-tool-btn" data-insert="\n```bash\n\n```\n">代码块</button>
             <button type="button" class="editor-tool-btn" data-insert="[链接文字](https://)">链接</button>
+            <button
+              type="button"
+              class="editor-tool-btn"
+              data-insert="\n> [!IMPORTANT]\n> 这里填写重要提示内容\n"
+            >
+              IMPORTANT
+            </button>
+            <button
+              type="button"
+              class="editor-tool-btn"
+              data-insert="\n:::: tabs\n::: tab-item 📝 概览\n第一页内容\n:::\n::: tab-item ⚙️ 配置\n第二页内容\n:::\n::::\n"
+            >
+              Tabs
+            </button>
+            <button
+              type="button"
+              class="editor-tool-btn"
+              data-insert="\n<details>\n<summary>点击展开查看详情</summary>\n\n这里写折叠内容……\n\n</details>\n"
+            >
+              折叠块
+            </button>
           </div>
           <textarea
             id="post-content"
@@ -71,12 +92,16 @@ const today = new Date().toISOString().slice(0, 10);
           <div class="editor-toolbar-row" style="justify-content:space-between;">
             <span style="font-size:0.78rem;font-weight:700;color:var(--text-secondary);">实时预览</span>
           </div>
-          <div id="post-preview" class="editor-preview prose" set:html={editingPost ? editingPost.html : '<p style="color:var(--text-secondary);">在左侧输入 Markdown 即可实时预览排版效果...</p>'} />
+          <div
+            id="post-preview"
+            class="editor-preview prose"
+            set:html={editingPost ? editingPost.html : '<p style="color:var(--text-secondary);">输入 Markdown 内容即可实时预览...</p>'}
+          />
         </div>
       </div>
     </div>
 
-    <!-- 右侧属性设置栏（仿 Halo 右侧抽屉） -->
+    <!-- 右侧属性设置栏 -->
     <aside class="glass-panel editor-drawer">
       <h2 style="margin:0 0 4px;font-size:0.98rem;font-weight:800;">文章设置</h2>
 
@@ -116,7 +141,7 @@ const today = new Date().toISOString().slice(0, 10);
           id="post-tags"
           class="admin-input"
           value={editingPost ? editingPost.tags.join(', ') : ''}
-          placeholder="如：Linux, Astro, 教程"
+          placeholder="如：Cloudflare, Astro, 教程"
         />
       </div>
 
@@ -145,108 +170,164 @@ const today = new Date().toISOString().slice(0, 10);
     </aside>
   </div>
 
-  <script is:inline>
-    (function () {
-      var titleEl = document.getElementById('post-title');
-      var slugEl = document.getElementById('post-slug');
-      var origSlugEl = document.getElementById('original-slug');
-      var catEl = document.getElementById('post-category');
-      var tagsEl = document.getElementById('post-tags');
-      var dateEl = document.getElementById('post-date');
-      var descEl = document.getElementById('post-desc');
-      var contentEl = document.getElementById('post-content');
-      var previewEl = document.getElementById('post-preview');
-      var toastEl = document.getElementById('save-toast');
+  <script>
+    import { renderMarkdown } from '../../lib/markdown';
 
-      // Markdown 快捷工具栏
-      document.querySelectorAll('.editor-tool-btn').forEach(function (btn) {
-        btn.addEventListener('click', function () {
-          if (!contentEl) return;
-          var start = contentEl.selectionStart;
-          var end = contentEl.selectionEnd;
-          var val = contentEl.value;
-          var insert = btn.getAttribute('data-insert');
-          var wrap = btn.getAttribute('data-wrap');
+    const titleEl = document.getElementById('post-title') as HTMLInputElement;
+    const slugEl = document.getElementById('post-slug') as HTMLInputElement;
+    const origSlugEl = document.getElementById('original-slug') as HTMLInputElement;
+    const catEl = document.getElementById('post-category') as HTMLInputElement;
+    const tagsEl = document.getElementById('post-tags') as HTMLInputElement;
+    const dateEl = document.getElementById('post-date') as HTMLInputElement;
+    const descEl = document.getElementById('post-desc') as HTMLTextAreaElement;
+    const contentEl = document.getElementById('post-content') as HTMLTextAreaElement;
+    const previewEl = document.getElementById('post-preview') as HTMLElement;
+    const toastEl = document.getElementById('save-toast') as HTMLElement;
+    const draftBtn = document.getElementById('save-draft-btn') as HTMLButtonElement;
+    const publishBtn = document.getElementById('publish-btn') as HTMLButtonElement;
 
-          if (wrap) {
-            var selected = val.slice(start, end) || '文字';
-            contentEl.value = val.slice(0, start) + wrap + selected + wrap + val.slice(end);
-            contentEl.focus();
-          } else if (insert) {
-            contentEl.value = val.slice(0, start) + insert.replace(/\\n/g, '\n') + val.slice(end);
-            contentEl.focus();
-          }
-          triggerPreview();
+    function updatePreviewNow() {
+      if (!contentEl || !previewEl) return;
+      const val = contentEl.value;
+      if (!val.trim()) {
+        previewEl.innerHTML = '<p style="color:var(--text-secondary);">输入 Markdown 内容即可实时预览...</p>';
+        return;
+      }
+      const { html } = renderMarkdown(val);
+      previewEl.innerHTML = html;
+    }
+
+    // 0ms 本地即时渲染
+    if (contentEl) {
+      contentEl.addEventListener('input', updatePreviewNow);
+    }
+
+    // 编辑器与预览区双向同步滚动
+    let syncingFromEditor = false;
+    let syncingFromPreview = false;
+
+    if (contentEl && previewEl) {
+      contentEl.addEventListener('scroll', () => {
+        if (syncingFromPreview) return;
+        syncingFromEditor = true;
+        const maxEditor = contentEl.scrollHeight - contentEl.clientHeight;
+        const maxPreview = previewEl.scrollHeight - previewEl.clientHeight;
+        if (maxEditor > 0 && maxPreview > 0) {
+          previewEl.scrollTop = (contentEl.scrollTop / maxEditor) * maxPreview;
+        }
+        requestAnimationFrame(() => { syncingFromEditor = false; });
+      });
+
+      previewEl.addEventListener('scroll', () => {
+        if (syncingFromEditor) return;
+        syncingFromPreview = true;
+        const maxEditor = contentEl.scrollHeight - contentEl.clientHeight;
+        const maxPreview = previewEl.scrollHeight - previewEl.clientHeight;
+        if (maxEditor > 0 && maxPreview > 0) {
+          contentEl.scrollTop = (previewEl.scrollTop / maxPreview) * maxEditor;
+        }
+        requestAnimationFrame(() => { syncingFromPreview = false; });
+      });
+    }
+
+    // 预览区内的 Tabs 切换支持
+    if (previewEl) {
+      previewEl.addEventListener('click', (e) => {
+        const target = e.target as HTMLElement;
+        const btn = target.closest('.md-tab-btn');
+        if (!btn) return;
+        const container = btn.closest('.md-tabs');
+        if (!container) return;
+        const idx = btn.getAttribute('data-tab-idx');
+        container.querySelectorAll('.md-tab-btn').forEach((b) => {
+          b.classList.toggle('active', b.getAttribute('data-tab-idx') === idx);
+        });
+        container.querySelectorAll('.md-tab-panel').forEach((p) => {
+          p.classList.toggle('active', p.getAttribute('data-tab-idx') === idx);
         });
       });
+    }
 
-      var previewTimer = null;
-      function triggerPreview() {
-        clearTimeout(previewTimer);
-        previewTimer = setTimeout(function () {
-          fetch('/api/admin/preview', {
-            method: 'POST',
-            headers: { 'content-type': 'application/json' },
-            body: JSON.stringify({ content: contentEl.value }),
-          })
-            .then(function (r) { return r.json(); })
-            .then(function (data) {
-              if (previewEl) previewEl.innerHTML = data.html || '';
-            });
-        }, 250);
-      }
+    // 快捷工具栏
+    document.querySelectorAll('.editor-tool-btn').forEach((btn) => {
+      btn.addEventListener('click', () => {
+        if (!contentEl) return;
+        const start = contentEl.selectionStart;
+        const end = contentEl.selectionEnd;
+        const val = contentEl.value;
+        const insert = btn.getAttribute('data-insert');
+        const wrap = btn.getAttribute('data-wrap');
 
-      if (contentEl) {
-        contentEl.addEventListener('input', triggerPreview);
-      }
-
-      function savePost(isDraft) {
-        var title = titleEl.value.trim();
-        if (!title) {
-          alert('请先输入文章标题');
-          titleEl.focus();
-          return;
+        if (wrap) {
+          const selected = val.slice(start, end) || '文字';
+          contentEl.value = val.slice(0, start) + wrap + selected + wrap + val.slice(end);
+          contentEl.focus();
+        } else if (insert) {
+          const text = insert.replace(/\\n/g, '\n');
+          contentEl.value = val.slice(0, start) + text + val.slice(end);
+          contentEl.focus();
         }
-        var payload = {
-          title: title,
-          slug: slugEl.value.trim() || title,
-          originalSlug: origSlugEl.value.trim(),
-          category: catEl.value.trim() || '随笔',
-          tags: tagsEl.value,
-          pubDate: dateEl.value,
-          description: descEl.value.trim(),
-          draft: isDraft,
-          content: contentEl.value,
-        };
+        updatePreviewNow();
+      });
+    });
 
-        fetch('/api/admin/posts', {
+    let isSaving = false;
+    async function savePost(isDraft: boolean) {
+      if (isSaving) return;
+      const title = titleEl.value.trim();
+      if (!title) {
+        alert('请先输入文章标题');
+        titleEl.focus();
+        return;
+      }
+
+      isSaving = true;
+      draftBtn.disabled = true;
+      publishBtn.disabled = true;
+      const draftLabel = draftBtn.querySelector('span');
+      const pubLabel = publishBtn.querySelector('span');
+      if (isDraft && draftLabel) draftLabel.textContent = '保存中...';
+      if (!isDraft && pubLabel) pubLabel.textContent = '发布中...';
+
+      try {
+        const res = await fetch('/api/admin/posts', {
           method: 'POST',
           headers: { 'content-type': 'application/json' },
-          body: JSON.stringify(payload),
-        })
-          .then(function (r) { return r.json(); })
-          .then(function (data) {
-            if (!data.ok) throw new Error(data.error || '保存失败');
-            origSlugEl.value = data.post.slug;
-            slugEl.value = data.post.slug;
-            toastEl.textContent = isDraft ? '草稿已保存' : '文章已发布！';
-            toastEl.style.display = 'inline';
-            setTimeout(function () { toastEl.style.display = 'none'; }, 2500);
-            if (!window.location.search.includes('slug=')) {
-              history.replaceState(null, '', '/admin/editor/?slug=' + encodeURIComponent(data.post.slug));
-            }
-          })
-          .catch(function (err) {
-            alert(err.message || '保存出错');
-          });
-      }
+          body: JSON.stringify({
+            title,
+            slug: slugEl.value.trim() || title,
+            originalSlug: origSlugEl.value.trim(),
+            category: catEl.value.trim() || '随笔',
+            tags: tagsEl.value,
+            pubDate: dateEl.value,
+            description: descEl.value.trim(),
+            draft: isDraft,
+            content: contentEl.value,
+          }),
+        });
+        const data = await res.json();
+        if (!data.ok) throw new Error(data.error || '保存失败');
 
-      document.getElementById('save-draft-btn').addEventListener('click', function () {
-        savePost(true);
-      });
-      document.getElementById('publish-btn').addEventListener('click', function () {
-        savePost(false);
-      });
-    })();
+        origSlugEl.value = data.post.slug;
+        slugEl.value = data.post.slug;
+        toastEl.textContent = isDraft ? '草稿已保存' : '文章已发布！';
+        toastEl.style.display = 'inline';
+        setTimeout(() => { toastEl.style.display = 'none'; }, 2500);
+        if (!window.location.search.includes('slug=')) {
+          history.replaceState(null, '', '/admin/editor/?slug=' + encodeURIComponent(data.post.slug));
+        }
+      } catch (err: any) {
+        alert(err?.message || '保存出错');
+      } finally {
+        isSaving = false;
+        draftBtn.disabled = false;
+        publishBtn.disabled = false;
+        if (draftLabel) draftLabel.textContent = '存为草稿';
+        if (pubLabel) pubLabel.textContent = '发布文章';
+      }
+    }
+
+    draftBtn.addEventListener('click', () => savePost(true));
+    publishBtn.addEventListener('click', () => savePost(false));
   </script>
 </AdminLayout>

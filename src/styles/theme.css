@@ -750,6 +750,225 @@ body.dark-theme .toc-item.active {
   }
 }
 
+/* ==================== 扩展 Markdown 组件样式：Tabs / GitHub Alerts / Details ==================== */
+.md-tabs {
+  margin: 1.35rem 0;
+  border: 1px solid var(--border-neon);
+  border-radius: 12px;
+  background: var(--panel-bg);
+  overflow: hidden;
+}
+
+.md-tabs-nav {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  padding: 10px 12px;
+  border-bottom: 1px solid var(--border-neon);
+  background: rgba(180, 83, 9, 0.04);
+}
+
+body.dark-theme .md-tabs-nav {
+  background: rgba(234, 179, 8, 0.05);
+}
+
+.md-tab-btn {
+  padding: 6px 13px;
+  border-radius: 8px;
+  border: 1px solid transparent;
+  background: transparent;
+  color: var(--text-secondary);
+  font-family: inherit;
+  font-size: 0.84rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.md-tab-btn:hover {
+  color: var(--neon-cyan);
+  background: rgba(180, 83, 9, 0.08);
+}
+
+.md-tab-btn.active {
+  color: var(--neon-cyan);
+  background: var(--panel-bg);
+  border-color: var(--border-neon-hover);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+}
+
+body.dark-theme .md-tab-btn.active {
+  background: rgba(234, 179, 8, 0.14);
+}
+
+.md-tabs-body {
+  padding: 16px 18px;
+}
+
+.md-tab-panel {
+  display: none;
+}
+
+.md-tab-panel.active {
+  display: block;
+}
+
+.md-tab-panel > :first-child {
+  margin-top: 0;
+}
+
+.md-tab-panel > :last-child {
+  margin-bottom: 0;
+}
+
+/* GitHub 风格 Alerts ([!NOTE] / [!TIP] / [!IMPORTANT] / [!WARNING] / [!CAUTION]) */
+.md-alert {
+  margin: 1.35rem 0;
+  padding: 14px 18px;
+  border-radius: 10px;
+  border-left: 4px solid var(--alert-color, var(--neon-cyan));
+  background: var(--alert-bg, rgba(180, 83, 9, 0.06));
+}
+
+.md-alert-title {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 0.84rem;
+  font-weight: 800;
+  color: var(--alert-color, var(--neon-cyan));
+  margin-bottom: 6px;
+}
+
+.md-alert-body > :first-child {
+  margin-top: 0;
+}
+
+.md-alert-body > :last-child {
+  margin-bottom: 0;
+}
+
+.md-alert--note {
+  --alert-color: #0284c7;
+  --alert-bg: rgba(2, 132, 199, 0.08);
+}
+
+.md-alert--tip {
+  --alert-color: #16a34a;
+  --alert-bg: rgba(22, 163, 74, 0.08);
+}
+
+.md-alert--important {
+  --alert-color: #7c3aed;
+  --alert-bg: rgba(124, 58, 237, 0.09);
+}
+
+.md-alert--warning {
+  --alert-color: #d97706;
+  --alert-bg: rgba(217, 119, 6, 0.1);
+}
+
+.md-alert--caution {
+  --alert-color: #dc2626;
+  --alert-bg: rgba(220, 38, 38, 0.09);
+}
+
+body.dark-theme .md-alert--note {
+  --alert-color: #38bdf8;
+  --alert-bg: rgba(56, 189, 248, 0.1);
+}
+
+body.dark-theme .md-alert--tip {
+  --alert-color: #4ade80;
+  --alert-bg: rgba(74, 222, 128, 0.1);
+}
+
+body.dark-theme .md-alert--important {
+  --alert-color: #c084fc;
+  --alert-bg: rgba(168, 85, 247, 0.13);
+}
+
+body.dark-theme .md-alert--warning {
+  --alert-color: #fbbf24;
+  --alert-bg: rgba(251, 191, 36, 0.11);
+}
+
+body.dark-theme .md-alert--caution {
+  --alert-color: #f87171;
+  --alert-bg: rgba(248, 113, 113, 0.11);
+}
+
+/* 美化可折叠块 (<details> + <summary>) */
+.prose details {
+  margin: 1.25rem 0;
+  border: 1px solid var(--border-neon);
+  border-radius: 12px;
+  background: var(--panel-bg);
+  overflow: hidden;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.prose details:hover,
+.prose details[open] {
+  border-color: var(--border-neon-hover);
+}
+
+.prose details summary {
+  list-style: none;
+  cursor: pointer;
+  padding: 13px 18px;
+  font-weight: 700;
+  font-size: 0.94rem;
+  color: var(--text-primary);
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  user-select: none;
+  transition: background 0.15s ease, color 0.15s ease;
+}
+
+.prose details summary::-webkit-details-marker {
+  display: none;
+}
+
+.prose details summary::before {
+  content: "▸";
+  display: inline-block;
+  font-size: 0.85em;
+  color: var(--neon-cyan);
+  transition: transform 0.2s ease;
+}
+
+.prose details[open] summary::before {
+  transform: rotate(90deg);
+}
+
+.prose details summary:hover {
+  color: var(--neon-cyan);
+  background: rgba(180, 83, 9, 0.05);
+}
+
+body.dark-theme .prose details summary:hover {
+  background: rgba(234, 179, 8, 0.07);
+}
+
+.prose details[open] summary {
+  border-bottom: 1px solid var(--border-neon);
+}
+
+.md-details-body,
+.prose details > :not(summary) {
+  padding: 14px 18px;
+}
+
+.md-details-body > :first-child {
+  margin-top: 0;
+}
+
+.md-details-body > :last-child {
+  margin-bottom: 0;
+}
+
 .theme-toggle-btn {
   display: inline-flex;
   align-items: center;

@@ -403,6 +403,21 @@ const categories = Array.from(categoryCounts.entries());
             closeSearch();
           }
         });
+
+        // Markdown Tabs 切换交互
+        document.addEventListener('click', function (e) {
+          var btn = e.target && e.target.closest ? e.target.closest('.md-tab-btn') : null;
+          if (!btn) return;
+          var container = btn.closest('.md-tabs');
+          if (!container) return;
+          var idx = btn.getAttribute('data-tab-idx');
+          container.querySelectorAll('.md-tab-btn').forEach(function (b) {
+            b.classList.toggle('active', b.getAttribute('data-tab-idx') === idx);
+          });
+          container.querySelectorAll('.md-tab-panel').forEach(function (p) {
+            p.classList.toggle('active', p.getAttribute('data-tab-idx') === idx);
+          });
+        });
       })();
     </script>
   </body>
