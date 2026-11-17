@@ -1,6 +1,6 @@
 ---
 title: "欢迎使用 Soft-Blog：纯小白 3 分钟写第一篇 Markdown 文章"
-description: "手把手教你在 Windows 或 Linux 下新建 Markdown 文章、本地预览并发布上线，无需懂任何前端代码。"
+description: "手把手教你在 Linux 下新建 Markdown 文章、Docker 一键部署上线，无需懂任何前端代码。"
 pubDate: 2026-11-17
 category: "新手指南"
 tags: ["Markdown", "教程", "入门"]

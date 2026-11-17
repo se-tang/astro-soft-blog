@@ -16,7 +16,7 @@ import BaseLayout from '../layouts/BaseLayout.astro';
       <h2>跨平台说明</h2>
       <ul>
         <li><strong>写作方式</strong>：所有文章均为纯 <code>.md</code> 文件，存放在 <code>src/content/posts/</code> 目录。</li>
-        <li><strong>Windows &amp; Linux 兼容</strong>：项目基于标准 Node.js + Astro 构建，路径与脚本均已做跨平台处理，可在 Windows 本地预览写作，也可无缝部署到 Linux 服务器或 Cloudflare Pages。</li>
+        <li><strong>Linux &amp; Docker 一键部署</strong>：项目内置多阶段 <code>Dockerfile</code> 与 <code>docker-compose.yml</code>，在 Linux 服务器上一条命令即可完成编译与 Nginx 静态托管，也可免费部署到 Cloudflare Pages。</li>
       </ul>
     </div>
   </article>
