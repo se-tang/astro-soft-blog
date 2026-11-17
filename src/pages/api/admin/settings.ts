@@ -14,8 +14,6 @@ export const POST: APIRoute = async ({ request, cookies, locals }) => {
     if (typeof body.subtitle === 'string') patch.subtitle = body.subtitle.trim();
     if (typeof body.description === 'string') patch.description = body.description.trim();
     if (typeof body.footerText === 'string') patch.footerText = body.footerText.trim();
-    if (typeof body.bannerText === 'string') patch.bannerText = body.bannerText.trim();
-    if (typeof body.bannerUrl === 'string') patch.bannerUrl = body.bannerUrl.trim();
     if (typeof body.aboutContent === 'string') patch.aboutContent = body.aboutContent;
     if (typeof body.newPassword === 'string' && body.newPassword.trim()) {
       patch.adminPassword = body.newPassword.trim();

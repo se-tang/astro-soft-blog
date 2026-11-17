@@ -5,8 +5,6 @@ export interface SiteSettings {
   subtitle: string;
   description: string;
   footerText: string;
-  bannerText?: string;
-  bannerUrl?: string;
   aboutContent: string;
   adminPassword?: string;
   sessionSecret?: string;
@@ -26,8 +24,6 @@ export const DEFAULT_SITE_SETTINGS: SiteSettings = {
   subtitle: '柔和毛玻璃个人博客',
   description: '记录技术折腾、生活随笔与阅读笔记。',
   footerText: 'Powered by Astro',
-  bannerText: '欢迎来到 Soft-Blog：点击右上角 Ctrl + K 可快速检索全站文章，右下角支持浅色 / 深色模式切换。',
-  bannerUrl: '/archive/',
   aboutContent: DEFAULT_ABOUT,
 };
 
@@ -47,8 +43,6 @@ export async function getSiteSettings(env?: RuntimeEnv): Promise<SiteSettings> {
       subtitle: map.subtitle || DEFAULT_SITE_SETTINGS.subtitle,
       description: map.description || DEFAULT_SITE_SETTINGS.description,
       footerText: map.footerText || DEFAULT_SITE_SETTINGS.footerText,
-      bannerText: map.bannerText !== undefined ? map.bannerText : DEFAULT_SITE_SETTINGS.bannerText,
-      bannerUrl: map.bannerUrl !== undefined ? map.bannerUrl : DEFAULT_SITE_SETTINGS.bannerUrl,
       aboutContent: map.aboutContent || DEFAULT_SITE_SETTINGS.aboutContent,
       adminPassword: map.adminPassword,
       sessionSecret: map.sessionSecret,
