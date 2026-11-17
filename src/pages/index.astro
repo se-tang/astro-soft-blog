@@ -45,7 +45,7 @@ function formatDate(date: Date) {
   <ul class="guides-list" id="post-list">
     {allPosts.map((post) => (
       <li class="glass-panel post-card" data-category={post.data.category}>
-        <a href={`/posts/${post.id}`} class="post-card-link">
+        <a href={`/posts/${post.id}/`} class="post-card-link">
           <div class="post-card-meta">
             <span class="post-category-badge">
               <FolderOpen size={12} style="display:inline;vertical-align:-2px;margin-right:4px;" />
