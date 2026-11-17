@@ -1,15 +1,14 @@
 <div align="center">
 
-# ✨ Astro Soft-Blog
+# ✨ Astro Soft-Blog (Cloudflare Pages + D1 版)
 
-**柔和渐变光斑 · 毛玻璃卡片 · 纯 Markdown 驱动的极简个人博客**
+**柔和渐变光斑 · 毛玻璃卡片 · 带在线管理后台的极简个人博客**
 
 [![Astro](https://img.shields.io/badge/Astro-5.x-BC52EE?style=flat-square&logo=astro&logoColor=white)](https://astro.build)
-[![Docker](https://img.shields.io/badge/Docker-Ready-2496ED?style=flat-square&logo=docker&logoColor=white)](https://www.docker.com/)
+[![Cloudflare Pages](https://img.shields.io/badge/Cloudflare-Pages%20%2B%20D1-F38020?style=flat-square&logo=cloudflare&logoColor=white)](https://pages.cloudflare.com/)
 [![Markdown](https://img.shields.io/badge/Content-Markdown-000000?style=flat-square&logo=markdown&logoColor=white)](https://www.markdownguide.org/)
-[![Platform](https://img.shields.io/badge/Platform-Linux-FCC624?style=flat-square&logo=linux&logoColor=black)](https://github.com/se-tang/astro-soft-blog)
 
-*专为 Linux 服务器一键部署与 Cloudflare Pages 免费托管打造，零数据库依赖，专注写作本身。*
+*零服务器成本，5 分钟在 Cloudflare 上免费部署带完整后台的个人博客。*
 
 </div>
 
@@ -19,88 +18,41 @@
 
 | 特性 | 说明 |
 | :--- | :--- |
-| 🎨 **柔和氛围背景** | 底层固定 `40px` 细网格 + 径向渐变光斑（浅色柔白 `#f8fafc` / 深色暗紫 `#0b080f`），护眼且 GPU 零压力 |
-| 🪟 **毛玻璃卡片质感** | 半透明面板配合 `backdrop-filter: blur(15px)`，支持右上角**浅色 / 深色模式**一键切换 |
-| 📝 **纯 Markdown 写作** | 文章全部放在 `src/content/posts/`，自动生成分类筛选、时间归档、代码块高亮与 RSS 订阅 |
-| 🐳 **Docker 一键上线** | 内置多阶段构建 `Dockerfile`，服务器无需安装 Node.js 与 npm，最终运行镜像仅约 **45MB** |
-| ☁️ **免费静态托管** | 支持直接关联 GitHub 部署到 **Cloudflare Pages**，零服务器成本 |
+| 🎨 **柔和氛围背景** | 底层 `40px` 细网格 + 径向渐变光斑（浅色柔白 `#f8fafc` / 深色暗紫 `#0b080f`），护眼且丝滑 |
+| 🪟 **毛玻璃卡片与主题** | 半透明面板配合 `backdrop-filter: blur(15px)`，支持右上角**浅色 / 深色模式**一键切换 |
+| 📝 **内置在线后台 (`/admin/`)** | 仿 Halo 风格控制台：分屏 Markdown 编辑与实时预览、草稿箱、分类/标签管理、站点设置 |
+| 🔍 **全局搜索与目录** | 顶栏 `Ctrl + K` 站内搜索、分类下拉菜单、文章页左侧「文章汇览」+ 右侧滚动跟随「本篇目录」 |
+| ☁️ **Cloudflare 免费托管** | 基于 `@astrojs/cloudflare` + **D1 云数据库**，首次访问自动建表与初始化，无需手写 SQL |
 
 ---
 
-## 🚀 极简一键部署（Linux 只需这一条命令）
+## 🚀 5 分钟免费部署到 Cloudflare Pages
 
-在一台全新的 Linux 服务器上，**不需要手动装 Docker、不需要装 Node.js**，直接执行这一条命令即可全自动完成安装、拉取代码并启动（全程静默精简输出）：
+### 第一步：Fork 仓库并创建 Pages 项目
 
-```bash
-curl -fsSL https://raw.githubusercontent.com/se-tang/astro-soft-blog/main/install.sh | bash
-```
-
-启动成功后，浏览器访问 **`http://你的服务器IP:8080`** 即可看到博客！  
-*(云服务器请在安全组放行 `8080` 端口；正式上线建议配合 1Panel / 宝塔 / Caddy 反向代理绑定域名与 HTTPS。)*
-
-<details>
-<summary>展开查看：手动分步命令（含国内服务器 Docker 镜像源）</summary>
-
-```bash
-# 海外服务器安装 Docker
-curl -fsSL https://get.docker.com | sh && systemctl enable --now docker
-
-# 国内服务器备用（阿里云镜像）
-# curl -fsSL https://get.docker.com | bash -s docker --mirror Aliyun && systemctl enable --now docker
-
-git clone https://github.com/se-tang/astro-soft-blog.git
-cd astro-soft-blog
-docker compose up -d --build
-```
-
-</details>
-
----
-
-## ✍️ 如何撰写与发布新文章？
-
-1. 在 `src/content/posts/` 目录下新建一个 `.md` 文件（例如 `my-note.md`）：
-
-```markdown
----
-title: "我的第一篇文章"
-description: "一句话概括文章内容"
-pubDate: 2026-11-17
-category: "随笔"
-tags: ["Linux", "Astro"]
----
-
-这里开始写你的 Markdown 正文……
-```
-
-2. 保存后回到项目根目录，重新执行启动命令即可更新上线：
-
-```bash
-docker compose up -d --build
-```
-
----
-
-## ☁️ 备选：Cloudflare Pages 免费托管（无需服务器）
-
-1. Fork 本仓库到你的 GitHub 账号。
-2. 登录 Cloudflare 控制台 → **Workers 和 Pages** → **创建** → 关联仓库。
-3. 构建配置填写：
+1. 点击右上角 **Fork** 将本仓库复制到你的 GitHub 账号。
+2. 登录 [Cloudflare 控制台](https://dash.cloudflare.com/) → **Workers 和 Pages** → **创建** → 切换到 **Pages** → **连接到 Git**，选择 `astro-soft-blog`。
+3. 构建设置填写：
    - **框架预设**：`Astro`
    - **构建命令**：`npm run build`
    - **输出目录**：`dist`
-4. 点击部署，几十秒后即可获得免费全球 CDN 加速与 HTTPS 网址。
+4. 点击 **保存并部署**。
+
+### 第二步：创建并绑定免费 D1 数据库（无需执行 SQL）
+
+1. 在 Cloudflare 控制台左侧进入 **存储和数据库（Storage & Databases）** → **D1 SQL 数据库** → **创建数据库**（名称填 `soft-blog-db`）。
+2. 回到你的 Pages 项目 → **设置（Settings）** → **绑定（Bindings）** → **添加** → 选择 **D1 数据库**：
+   - **变量名称（Variable name）**：必须填 **`DB`**
+   - **D1 数据库**：选择刚创建的 `soft-blog-db`
+3. 保存后，到 **部署（Deployments）** 页对最新部署点一次 **`...` → 重试部署（Retry deployment）** 使绑定生效。
 
 ---
 
-## 🛠️ Linux 本地开发预览（可选）
+## ✍️ 进入后台写文章
 
-如果本机已安装 Node.js 20+，可直接本地热更新预览：
-
-```bash
-chmod +x start-linux.sh
-./start-linux.sh
-```
+1. 打开 `https://你的域名/admin/`（或点击顶栏右侧齿轮图标）。
+2. 默认管理员密码：**`admin123`**（可在 Pages 环境变量 `ADMIN_PASSWORD` 或后台「站点设置」中修改）。
+3. 登录后即可新建/编辑 Markdown 文章、管理分类标签、修改博客标题与「关于」页面。
 
 ---
 
@@ -109,14 +61,15 @@ chmod +x start-linux.sh
 ```text
 astro-soft-blog/
 ├── src/
-│   ├── content/posts/     # 存放你的所有 Markdown 文章 (.md)
-│   ├── layouts/           # 全局布局（柔和背景、导航栏、页脚）
-│   ├── pages/             # 首页、归档、关于、文章详情、RSS
-│   └── styles/theme.css   # 浅色/深色主题变量与毛玻璃样式
-├── Dockerfile             # 多阶段构建配置（Node 打包 -> Nginx 托管）
-├── docker-compose.yml     # 一键编排启动配置
-├── nginx.conf             # 静态资源缓存与路由配置
-└── TUTORIAL-LINUX.md      # 面向纯小白的完整 Linux 实战教程
+│   ├── lib/
+│   │   ├── db.ts          # D1 自动建表与示例数据初始化
+│   │   ├── posts.ts       # 文章与分类标签 D1 读写接口
+│   │   ├── site.ts        # 站点设置 D1 读写接口
+│   │   ├── auth.ts        # Web Crypto 鉴权与 Cookie 会话
+│   │   └── markdown.ts    # Markdown 渲染与目录提取
+│   ├── layouts/           # 前台布局 & 后台控制台布局
+│   ├── pages/             # 前台页面、/admin/* 后台、/api/admin/* 接口
+│   ├── middleware.ts      # Cloudflare Pages HTML 响应兼容处理
+│   └── styles/            # 柔和毛玻璃前台样式 & 后台样式
+└── astro.config.mjs       # Astro + Cloudflare 适配器配置
 ```
-
-📖 **详细图文步骤请阅读**：[Linux 纯小白完整搭建教程](./TUTORIAL-LINUX.md)
