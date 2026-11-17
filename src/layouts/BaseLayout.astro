@@ -113,7 +113,7 @@ const categories = Array.from(categoryCounts.entries());
           >
             <span class="btn-search-left">
               <Search size={14} />
-              <span class="btn-search-text">搜索文章...</span>
+              <span class="btn-search-text">搜索</span>
             </span>
             <span class="btn-search-kbd">Ctrl K</span>
           </button>
@@ -145,13 +145,13 @@ const categories = Array.from(categoryCounts.entries());
             type="text"
             id="search-input"
             class="search-input"
-            placeholder="输入标题、标签或正文关键词（支持模糊搜索）..."
+            placeholder="搜索文章..."
             autocomplete="off"
           />
           <button type="button" id="search-close" class="search-esc-btn">ESC</button>
         </div>
         <div id="search-results" class="search-results">
-          <div class="search-empty">输入关键词即可实时模糊搜索全站文章</div>
+          <div class="search-empty">输入关键词搜索</div>
         </div>
       </div>
     </div>
@@ -163,7 +163,6 @@ const categories = Array.from(categoryCounts.entries());
     <footer class="app-footer">
       <p>
         Powered by <a href="https://astro.build" target="_blank" rel="noreferrer">Astro</a>
-        · Markdown 驱动 · 支持浅色 / 深色柔和主题
       </p>
     </footer>
 
