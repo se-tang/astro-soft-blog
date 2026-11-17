@@ -5,6 +5,7 @@ export default defineConfig({
   site: 'https://__site_origin__',
   output: 'server',
   adapter: cloudflare({
+    imageService: 'passthrough',
     platformProxy: {
       enabled: true,
     },
