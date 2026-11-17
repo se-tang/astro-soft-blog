@@ -4,7 +4,7 @@ import '@fontsource-variable/jetbrains-mono';
 import '../styles/theme.css';
 import { getCollection } from 'astro:content';
 import { SITE_CONFIG } from '../config/site';
-import { Sparkles, Sun, Moon, Rss, ChevronDown } from 'lucide-astro';
+import { Sparkles, Sun, Moon, Rss, ChevronDown, Search } from 'lucide-astro';
 
 interface Props {
   title: string;
@@ -101,9 +101,27 @@ const categories = Array.from(categoryCounts.entries());
           <a href="/tags/" class:list={['nav-link', { active: pathname.startsWith('/tags') }]}>标签</a>
           <a href="/archive/" class:list={['nav-link', { active: pathname.startsWith('/archive') }]}>归档</a>
           <a href="/about/" class:list={['nav-link', { active: pathname.startsWith('/about') }]}>关于</a>
-          <a href="/rss.xml" class="nav-link" title="RSS 订阅" aria-label="RSS 订阅">
+        </nav>
+
+        <div class="header-controls">
+          <button
+            type="button"
+            id="search-trigger"
+            class="btn-search"
+            aria-label="搜索文章"
+            title="搜索文章 (Ctrl + K)"
+          >
+            <span class="btn-search-left">
+              <Search size={14} />
+              <span class="btn-search-text">搜索文章...</span>
+            </span>
+            <span class="btn-search-kbd">Ctrl K</span>
+          </button>
+
+          <a href="/rss.xml" class="theme-toggle-btn" title="RSS 订阅" aria-label="RSS 订阅">
             <Rss size={15} />
           </a>
+
           <button
             type="button"
             id="theme-toggle"
@@ -114,9 +132,29 @@ const categories = Array.from(categoryCounts.entries());
             <Sun size={16} class="icon-sun" />
             <Moon size={16} class="icon-moon" />
           </button>
-        </nav>
+        </div>
       </div>
     </header>
+
+    <!-- 全局模糊搜索弹窗 (Ctrl + K) -->
+    <div id="search-backdrop" class="search-backdrop" role="dialog" aria-modal="true" aria-label="站内文章搜索">
+      <div class="search-modal">
+        <div class="search-input-wrap">
+          <Search size={18} style="color: var(--neon-cyan); flex-shrink: 0;" />
+          <input
+            type="text"
+            id="search-input"
+            class="search-input"
+            placeholder="输入标题、标签或正文关键词（支持模糊搜索）..."
+            autocomplete="off"
+          />
+          <button type="button" id="search-close" class="search-esc-btn">ESC</button>
+        </div>
+        <div id="search-results" class="search-results">
+          <div class="search-empty">输入关键词即可实时模糊搜索全站文章</div>
+        </div>
+      </div>
+    </div>
 
     <main class="main-container">
       <slot />
@@ -184,6 +222,186 @@ const categories = Array.from(categoryCounts.entries());
             if (!dropdown.contains(e.target)) closeMenu();
           });
         }
+
+        // ==================== 全局模糊搜索逻辑 ====================
+        var backdrop = document.getElementById('search-backdrop');
+        var searchTrigger = document.getElementById('search-trigger');
+        var searchInput = document.getElementById('search-input');
+        var searchClose = document.getElementById('search-close');
+        var searchResults = document.getElementById('search-results');
+        var searchIndex = null;
+        var activeIdx = -1;
+
+        function escapeHtml(str) {
+          return String(str)
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;');
+        }
+
+        // 子序列模糊匹配打分（支持跳字模糊匹配，如 mkd -> Markdown）
+        function fuzzySubseqScore(query, target) {
+          var qi = 0;
+          var score = 0;
+          var consecutive = 0;
+          for (var ti = 0; ti < target.length && qi < query.length; ti++) {
+            if (target[ti] === query[qi]) {
+              qi++;
+              consecutive++;
+              score += 1 + consecutive * 2;
+            } else {
+              consecutive = 0;
+            }
+          }
+          return qi === query.length ? score : 0;
+        }
+
+        function scorePost(post, rawQuery) {
+          var q = rawQuery.trim().toLowerCase();
+          if (!q) return 1;
+          var tokens = q.split(/\s+/).filter(Boolean);
+          var title = post.title.toLowerCase();
+          var cat = post.category.toLowerCase();
+          var tags = (post.tags || []).join(' ').toLowerCase();
+          var desc = post.description.toLowerCase();
+          var body = (post.body || '').toLowerCase();
+
+          var total = 0;
+          for (var i = 0; i < tokens.length; i++) {
+            var tok = tokens[i];
+            var tokScore = 0;
+            if (title.indexOf(tok) !== -1) tokScore += 100;
+            if (tags.indexOf(tok) !== -1 || cat.indexOf(tok) !== -1) tokScore += 60;
+            if (desc.indexOf(tok) !== -1) tokScore += 40;
+            if (body.indexOf(tok) !== -1) tokScore += 20;
+            if (tokScore === 0) {
+              var subTitle = fuzzySubseqScore(tok, title);
+              var subTags = fuzzySubseqScore(tok, tags + ' ' + cat);
+              var subDesc = fuzzySubseqScore(tok, desc);
+              tokScore = subTitle * 2 + subTags + Math.floor(subDesc * 0.5);
+            }
+            if (tokScore === 0) return 0;
+            total += tokScore;
+          }
+          return total;
+        }
+
+        function highlightText(text, query) {
+          var safe = escapeHtml(text);
+          var tokens = query.trim().split(/\s+/).filter(Boolean);
+          if (!tokens.length) return safe;
+          tokens.forEach(function (tok) {
+            var esc = tok.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+            safe = safe.replace(new RegExp('(' + esc + ')', 'gi'), '<mark class="search-highlight">$1</mark>');
+          });
+          return safe;
+        }
+
+        function renderResults(query) {
+          if (!searchIndex || !searchResults) return;
+          var q = query.trim();
+          var list = searchIndex
+            .map(function (item) { return { item: item, score: scorePost(item, q) }; })
+            .filter(function (entry) { return entry.score > 0; })
+            .sort(function (a, b) { return b.score - a.score; })
+            .slice(0, 12);
+
+          activeIdx = list.length > 0 ? 0 : -1;
+
+          if (!list.length) {
+            searchResults.innerHTML = '<div class="search-empty">没有找到与 “' + escapeHtml(q) + '” 相关的文章</div>';
+            return;
+          }
+
+          searchResults.innerHTML = list.map(function (entry, idx) {
+            var p = entry.item;
+            return (
+              '<a href="' + p.url + '" class="search-result-item' + (idx === 0 ? ' selected' : '') + '">' +
+                '<div class="search-result-meta">' + escapeHtml(p.category) + ' · ' + escapeHtml(p.date) + '</div>' +
+                '<div class="search-result-title">' + highlightText(p.title, q) + '</div>' +
+                '<div class="search-result-desc">' + highlightText(p.description, q) + '</div>' +
+              '</a>'
+            );
+          }).join('');
+        }
+
+        function loadIndexAndRender() {
+          if (searchIndex) {
+            renderResults(searchInput ? searchInput.value : '');
+            return;
+          }
+          fetch('/search-index.json')
+            .then(function (r) { return r.json(); })
+            .then(function (data) {
+              searchIndex = data;
+              renderResults(searchInput ? searchInput.value : '');
+            })
+            .catch(function () {
+              if (searchResults) searchResults.innerHTML = '<div class="search-empty">搜索索引加载失败</div>';
+            });
+        }
+
+        function openSearch() {
+          if (!backdrop) return;
+          backdrop.classList.add('open');
+          loadIndexAndRender();
+          setTimeout(function () {
+            if (searchInput) searchInput.focus();
+          }, 20);
+        }
+
+        function closeSearch() {
+          if (!backdrop) return;
+          backdrop.classList.remove('open');
+        }
+
+        if (searchTrigger) searchTrigger.addEventListener('click', openSearch);
+        if (searchClose) searchClose.addEventListener('click', closeSearch);
+        if (backdrop) {
+          backdrop.addEventListener('click', function (e) {
+            if (e.target === backdrop) closeSearch();
+          });
+        }
+        if (searchInput) {
+          searchInput.addEventListener('input', function () {
+            renderResults(searchInput.value);
+          });
+          searchInput.addEventListener('keydown', function (e) {
+            var items = searchResults ? searchResults.querySelectorAll('.search-result-item') : [];
+            if (!items.length) return;
+            if (e.key === 'ArrowDown') {
+              e.preventDefault();
+              activeIdx = (activeIdx + 1) % items.length;
+            } else if (e.key === 'ArrowUp') {
+              e.preventDefault();
+              activeIdx = (activeIdx - 1 + items.length) % items.length;
+            } else if (e.key === 'Enter' && activeIdx >= 0) {
+              e.preventDefault();
+              items[activeIdx].click();
+              return;
+            } else {
+              return;
+            }
+            items.forEach(function (el, i) {
+              el.classList.toggle('selected', i === activeIdx);
+            });
+            items[activeIdx].scrollIntoView({ block: 'nearest' });
+          });
+        }
+
+        document.addEventListener('keydown', function (e) {
+          if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'k') {
+            e.preventDefault();
+            if (backdrop && backdrop.classList.contains('open')) {
+              closeSearch();
+            } else {
+              openSearch();
+            }
+          } else if (e.key === 'Escape' && backdrop && backdrop.classList.contains('open')) {
+            closeSearch();
+          }
+        });
       })();
     </script>
   </body>

@@ -308,6 +308,212 @@ body.dark-theme .nav-count {
   background: rgba(234, 179, 8, 0.12);
 }
 
+/* ==================== 顶部右侧搜索按钮与弹窗 (仿 vps-craft.com) ==================== */
+.header-controls {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+.btn-search {
+  display: inline-flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  min-width: 170px;
+  height: 34px;
+  padding: 0 10px;
+  border-radius: 8px;
+  border: 1px solid var(--border-neon);
+  background: var(--panel-bg);
+  color: var(--text-secondary);
+  font-family: inherit;
+  font-size: 0.78rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: color 0.15s, border-color 0.15s, background 0.15s;
+}
+
+.btn-search:hover {
+  color: var(--neon-cyan);
+  border-color: var(--border-neon-hover);
+  background: rgba(180, 83, 9, 0.06);
+}
+
+body.dark-theme .btn-search:hover {
+  background: rgba(234, 179, 8, 0.1);
+}
+
+.btn-search-left {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.btn-search-kbd {
+  font-family: var(--font-mono);
+  font-size: 0.66rem;
+  opacity: 0.7;
+  border: 1px solid var(--border-neon);
+  border-radius: 4px;
+  padding: 1px 5px;
+  line-height: 1.3;
+}
+
+.search-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 2000;
+  background: rgba(15, 23, 42, 0.35);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+  display: none;
+  align-items: flex-start;
+  justify-content: center;
+  padding: 80px 16px 24px;
+}
+
+body.dark-theme .search-backdrop {
+  background: rgba(5, 3, 8, 0.65);
+}
+
+.search-backdrop.open {
+  display: flex;
+}
+
+.search-modal {
+  width: 100%;
+  max-width: 600px;
+  border-radius: 14px;
+  background: var(--header-bg);
+  border: 1px solid var(--border-neon-hover);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  box-shadow: var(--shadow-card-hover);
+  overflow: hidden;
+}
+
+.search-input-wrap {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 14px 18px;
+  border-bottom: 1px solid var(--border-neon);
+}
+
+.search-input {
+  flex: 1;
+  border: none;
+  outline: none;
+  background: transparent;
+  color: var(--text-primary);
+  font-family: inherit;
+  font-size: 0.98rem;
+  font-weight: 600;
+}
+
+.search-input::placeholder {
+  color: var(--text-secondary);
+  opacity: 0.75;
+}
+
+.search-esc-btn {
+  font-family: var(--font-mono);
+  font-size: 0.7rem;
+  color: var(--text-secondary);
+  background: var(--panel-bg);
+  border: 1px solid var(--border-neon);
+  border-radius: 5px;
+  padding: 2px 7px;
+  cursor: pointer;
+}
+
+.search-results {
+  max-height: 400px;
+  overflow-y: auto;
+  padding: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.search-result-item {
+  display: block;
+  padding: 12px 14px;
+  border-radius: 10px;
+  text-decoration: none;
+  color: inherit;
+  border: 1px solid transparent;
+  transition: background 0.12s, border-color 0.12s;
+}
+
+.search-result-item:hover,
+.search-result-item.selected {
+  background: rgba(180, 83, 9, 0.08);
+  border-color: var(--border-neon);
+}
+
+body.dark-theme .search-result-item:hover,
+body.dark-theme .search-result-item.selected {
+  background: rgba(234, 179, 8, 0.1);
+}
+
+.search-result-title {
+  font-size: 0.95rem;
+  font-weight: 800;
+  color: var(--text-primary);
+  margin-bottom: 4px;
+}
+
+.search-result-meta {
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  color: var(--neon-cyan);
+  margin-bottom: 4px;
+}
+
+.search-result-desc {
+  font-size: 0.82rem;
+  color: var(--text-secondary);
+  line-height: 1.5;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.search-empty {
+  padding: 28px 16px;
+  text-align: center;
+  font-size: 0.88rem;
+  color: var(--text-secondary);
+}
+
+.search-highlight {
+  color: var(--neon-cyan);
+  background: rgba(180, 83, 9, 0.12);
+  border-radius: 3px;
+  padding: 0 2px;
+}
+
+body.dark-theme .search-highlight {
+  background: rgba(234, 179, 8, 0.18);
+}
+
+@media (max-width: 640px) {
+  .btn-search {
+    min-width: unset;
+    width: 34px;
+    padding: 0;
+    justify-content: center;
+  }
+  .btn-search-text,
+  .btn-search-kbd {
+    display: none;
+  }
+}
+
 .theme-toggle-btn {
   display: inline-flex;
   align-items: center;
