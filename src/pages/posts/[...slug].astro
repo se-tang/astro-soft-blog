@@ -1,0 +1,64 @@
+---
+import { getCollection, render } from 'astro:content';
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import { Calendar, FolderOpen, ArrowLeft } from 'lucide-astro';
+
+export async function getStaticPaths() {
+  const posts = await getCollection('posts', ({ data }) => !data.draft);
+  return posts.map((post) => ({
+    params: { slug: post.id },
+    props: { post },
+  }));
+}
+
+const { post } = Astro.props;
+const { Content } = await render(post);
+
+function formatDate(date: Date) {
+  return date.toISOString().slice(0, 10);
+}
+---
+
+<BaseLayout title={`${post.data.title} | Soft-Blog`} description={post.data.description}>
+  <nav class="breadcrumbs" aria-label="面包屑导航">
+    <a href="/" class="bc-link">首页</a>
+    <span class="bc-sep">/</span>
+    <span class="bc-link">{post.data.category}</span>
+    <span class="bc-sep">/</span>
+    <span class="bc-current">{post.data.title}</span>
+  </nav>
+
+  <article class="glass-panel article-panel">
+    <header class="article-header">
+      <div class="post-card-meta" style="margin-bottom: 12px;">
+        <span class="post-category-badge">
+          <FolderOpen size={12} style="display:inline;vertical-align:-2px;margin-right:4px;" />
+          {post.data.category}
+        </span>
+        <span>
+          <Calendar size={12} style="display:inline;vertical-align:-2px;margin-right:4px;" />
+          发布于 {formatDate(post.data.pubDate)}
+        </span>
+      </div>
+      <h1 class="article-title">{post.data.title}</h1>
+      <p class="guides-lede" style="margin-top: 12px;">{post.data.description}</p>
+      {post.data.tags.length > 0 && (
+        <div class="post-tags" style="margin-top: 14px;">
+          {post.data.tags.map((tag) => (
+            <span class="post-tag">#{tag}</span>
+          ))}
+        </div>
+      )}
+    </header>
+
+    <div class="prose">
+      <Content />
+    </div>
+  </article>
+
+  <div style="margin-top: 22px;">
+    <a href="/" class="nav-link" style="display:inline-flex;align-items:center;gap:6px;">
+      <ArrowLeft size={15} /> 返回文章列表
+    </a>
+  </div>
+</BaseLayout>

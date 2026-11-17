@@ -1,0 +1,93 @@
+---
+import { getCollection } from 'astro:content';
+import BaseLayout from '../layouts/BaseLayout.astro';
+import { Calendar, FolderOpen, ArrowRight } from 'lucide-astro';
+
+const allPosts = (await getCollection('posts', ({ data }) => !data.draft)).sort(
+  (a, b) => b.data.pubDate.valueOf() - a.data.pubDate.valueOf()
+);
+
+const categoryCounts = new Map<string, number>();
+for (const post of allPosts) {
+  const cat = post.data.category;
+  categoryCounts.set(cat, (categoryCounts.get(cat) ?? 0) + 1);
+}
+const categories = Array.from(categoryCounts.entries());
+
+function formatDate(date: Date) {
+  return date.toISOString().slice(0, 10);
+}
+---
+
+<BaseLayout
+  title="Soft-Blog | 柔和毛玻璃个人博客"
+  description="记录技术折腾、生活随笔与 Markdown 笔记的个人博客。"
+>
+  <section class="glass-panel guides-header">
+    <h1 class="guides-h1">Soft-Blog · 个人博客</h1>
+    <p class="guides-lede">
+      专注于纯粹的 Markdown 写作体验。采用低饱和柔和渐变背景与毛玻璃卡片设计，支持浅色 / 深色模式一键切换，在 Windows 与 Linux 下均可零成本部署。
+    </p>
+    <p class="guides-count">共收录 {allPosts.length} 篇文章 · {categories.length} 个分类</p>
+  </section>
+
+  <div class="guides-tabs" role="tablist" aria-label="文章分类筛选">
+    <button type="button" class="guides-tab active" data-category="all">
+      全部 <span class="guides-tab-count">{allPosts.length}</span>
+    </button>
+    {categories.map(([cat, count]) => (
+      <button type="button" class="guides-tab" data-category={cat}>
+        {cat} <span class="guides-tab-count">{count}</span>
+      </button>
+    ))}
+  </div>
+
+  <ul class="guides-list" id="post-list">
+    {allPosts.map((post) => (
+      <li class="glass-panel post-card" data-category={post.data.category}>
+        <a href={`/posts/${post.id}`} class="post-card-link">
+          <div class="post-card-meta">
+            <span class="post-category-badge">
+              <FolderOpen size={12} style="display:inline;vertical-align:-2px;margin-right:4px;" />
+              {post.data.category}
+            </span>
+            <span>
+              <Calendar size={12} style="display:inline;vertical-align:-2px;margin-right:4px;" />
+              {formatDate(post.data.pubDate)}
+            </span>
+          </div>
+          <h2 class="post-card-title">{post.data.title}</h2>
+          <p class="post-card-desc">{post.data.description}</p>
+          <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;">
+            <div class="post-tags">
+              {post.data.tags.map((tag) => (
+                <span class="post-tag">#{tag}</span>
+              ))}
+            </div>
+            <span style="font-size:0.8rem;font-weight:700;color:var(--neon-cyan);display:inline-flex;align-items:center;gap:4px;">
+              阅读全文 <ArrowRight size={14} />
+            </span>
+          </div>
+        </a>
+      </li>
+    ))}
+  </ul>
+
+  <script is:inline>
+    (function () {
+      var tabs = document.querySelectorAll('.guides-tab');
+      var cards = document.querySelectorAll('#post-list .post-card');
+      tabs.forEach(function (tab) {
+        tab.addEventListener('click', function () {
+          var selected = tab.getAttribute('data-category');
+          tabs.forEach(function (t) { t.classList.remove('active'); });
+          tab.classList.add('active');
+          cards.forEach(function (card) {
+            var cat = card.getAttribute('data-category');
+            card.style.display = (selected === 'all' || cat === selected) ? '' : 'none';
+          });
+        });
+      });
+    })();
+  </script>
+</BaseLayout>

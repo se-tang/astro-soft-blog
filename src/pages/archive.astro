@@ -1,0 +1,44 @@
+---
+import { getCollection } from 'astro:content';
+import BaseLayout from '../layouts/BaseLayout.astro';
+
+const posts = (await getCollection('posts', ({ data }) => !data.draft)).sort(
+  (a, b) => b.data.pubDate.valueOf() - a.data.pubDate.valueOf()
+);
+
+const byYear = new Map<number, typeof posts>();
+for (const post of posts) {
+  const year = post.data.pubDate.getFullYear();
+  if (!byYear.has(year)) byYear.set(year, []);
+  byYear.get(year)!.push(post);
+}
+const years = Array.from(byYear.entries()).sort((a, b) => b[0] - a[0]);
+---
+
+<BaseLayout title="文章归档 | Soft-Blog" description="按年份整理的所有 Markdown 文章归档。">
+  <section class="glass-panel guides-header">
+    <h1 class="guides-h1">文章归档</h1>
+    <p class="guides-lede">按时间线整理的所有文章，目前共 {posts.length} 篇。</p>
+  </section>
+
+  {years.map(([year, list]) => (
+    <section class="glass-panel" style="padding: 24px 28px; margin-bottom: 18px;">
+      <h2 style="margin: 0 0 14px; font-family: var(--font-mono); font-size: 1.2rem; color: var(--neon-cyan);">
+        {year} 年 ({list.length})
+      </h2>
+      <ul style="list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 10px;">
+        {list.map((post) => (
+          <li style="display: flex; align-items: baseline; gap: 14px; flex-wrap: wrap;">
+            <span style="font-family: var(--font-mono); font-size: 0.82rem; color: var(--text-secondary);">
+              {post.data.pubDate.toISOString().slice(0, 10)}
+            </span>
+            <a href={`/posts/${post.id}`} style="color: var(--text-primary); font-weight: 700; text-decoration: none;">
+              {post.data.title}
+            </a>
+            <span class="post-category-badge" style="font-size: 0.72rem;">{post.data.category}</span>
+          </li>
+        ))}
+      </ul>
+    </section>
+  ))}
+</BaseLayout>

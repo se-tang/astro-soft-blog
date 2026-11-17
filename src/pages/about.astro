@@ -1,0 +1,23 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+---
+
+<BaseLayout title="关于 | Soft-Blog" description="关于本博客与技术说明">
+  <article class="glass-panel article-panel">
+    <header class="article-header">
+      <h1 class="article-title">关于 Soft-Blog</h1>
+      <p class="guides-lede">一个以柔和阅读体验为核心、纯 Markdown 驱动的轻量级个人博客。</p>
+    </header>
+    <div class="prose">
+      <h2>设计理念</h2>
+      <p>
+        本博客参考了 <code>vps-craft.com</code> 的视觉风格，采用 <strong>低饱和底色 + 径向渐变柔和光斑 + 40px 细网格 + 毛玻璃卡片</strong> 的组合，尽量减少长时间阅读带来的视觉疲劳。
+      </p>
+      <h2>跨平台说明</h2>
+      <ul>
+        <li><strong>写作方式</strong>：所有文章均为纯 <code>.md</code> 文件，存放在 <code>src/content/posts/</code> 目录。</li>
+        <li><strong>Windows &amp; Linux 兼容</strong>：项目基于标准 Node.js + Astro 构建，路径与脚本均已做跨平台处理，可在 Windows 本地预览写作，也可无缝部署到 Linux 服务器或 Cloudflare Pages。</li>
+      </ul>
+    </div>
+  </article>
+</BaseLayout>
