@@ -128,34 +128,65 @@ function formatDate(date: Date) {
         });
       }
 
-      var tocLinks = document.querySelectorAll('#toc-list .toc-item');
+      var tocLinks = Array.from(document.querySelectorAll('#toc-list .toc-item'));
+      var tocSidebar = document.querySelector('.doc-toc-sidebar');
       var prose = document.getElementById('article-prose');
       if (!tocLinks.length || !prose) return;
 
       var headings = Array.from(prose.querySelectorAll('h2[id], h3[id], h4[id]'));
       if (!headings.length) return;
 
+      var currentId = '';
       function setActive(id) {
+        if (!id || id === currentId) return;
+        currentId = id;
+        var activeEl = null;
         tocLinks.forEach(function (link) {
-          link.classList.toggle('active', link.getAttribute('data-toc-id') === id);
+          var matched = link.getAttribute('data-toc-id') === id;
+          link.classList.toggle('active', matched);
+          if (matched) activeEl = link;
         });
-      }
-
-      if ('IntersectionObserver' in window) {
-        var observer = new IntersectionObserver(
-          function (entries) {
-            entries.forEach(function (entry) {
-              if (entry.isIntersecting) {
-                setActive(entry.target.id);
-              }
+        if (activeEl && tocSidebar) {
+          var sRect = tocSidebar.getBoundingClientRect();
+          var aRect = activeEl.getBoundingClientRect();
+          if (aRect.top < sRect.top + 40 || aRect.bottom > sRect.bottom - 40) {
+            tocSidebar.scrollTo({
+              top: tocSidebar.scrollTop + (aRect.top - sRect.top) - sRect.height / 2 + aRect.height / 2,
+              behavior: 'smooth',
             });
-          },
-          { rootMargin: '-76px 0px -70% 0px', threshold: 0 }
-        );
-        headings.forEach(function (h) { observer.observe(h); });
+          }
+        }
       }
 
-      setActive(headings[0].id);
+      function updateActiveByScroll() {
+        var nearBottom = window.innerHeight + window.scrollY >= document.documentElement.scrollHeight - 40;
+        if (nearBottom) {
+          setActive(headings[headings.length - 1].id);
+          return;
+        }
+        var active = headings[0].id;
+        for (var i = 0; i < headings.length; i++) {
+          if (headings[i].getBoundingClientRect().top <= 110) {
+            active = headings[i].id;
+          } else {
+            break;
+          }
+        }
+        setActive(active);
+      }
+
+      var ticking = false;
+      window.addEventListener('scroll', function () {
+        if (!ticking) {
+          ticking = true;
+          requestAnimationFrame(function () {
+            updateActiveByScroll();
+            ticking = false;
+          });
+        }
+      }, { passive: true });
+
+      updateActiveByScroll();
     })();
   </script>
 </BaseLayout>
